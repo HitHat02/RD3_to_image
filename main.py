@@ -3,6 +3,11 @@ import os
 import matplotlib.pyplot as plt
 
 class GPRProcessor:
+    """
+    GPR 데이터를 처리하는 클래스
+    - GPR을 3차원으로 변형 후 원하는 부분만 잘라서 RETURN 해주는 기능 제공
+
+    """
     def __init__(self, gpr_data, start_idx, length):
         """
         start_idx : 시작지점
