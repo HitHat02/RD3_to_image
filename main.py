@@ -57,5 +57,4 @@ if __name__ == "__main__":
 
     plot_gpr_image(cut, channel=9)
 
-   
 
