@@ -1,3 +1,7 @@
+'''
+데이터 전처리 및 slicing, filtering 등을 담당하는 모듈
+'''
+
 import numpy as np
 
 def reshapeRd3(raw_rd3):
