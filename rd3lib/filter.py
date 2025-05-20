@@ -1,4 +1,10 @@
-import filter_back_end as filterBack
+'''
+rd3 파일 데이터 전처리에 사용되는 모든 필터를 적용하는 모듈
+apply_filter(numpy_data)를 사용하면
+default로 지정되어있는 전처리를 하여 numpy_data를 돌려줌
+'''
+
+from rd3lib import filter_back_end as filterBack
 
 import pandas as pd
 import numpy as np
@@ -13,7 +19,7 @@ def apply_filter(npy_file):
     :param npy_file: numpy로 읽은 RD3 바이너리 파일
     :return: 필터를 적용한 numpy RD3_data
     '''
-    filter_df = pd.read_csv('.\\filterCollect.csv')
+    filter_df = pd.read_csv('.\\rd3lib\\filterCollect.csv')
 
     filter_ = filter_worker(npy_file, filter_df)
     RD3_data = filter_.filterRun()
@@ -22,8 +28,8 @@ def apply_filter(npy_file):
 class filter_worker:
     def __init__(self, data, filter_df):
         super().__init__()
-        self.data = data
-        self.filter_df = filter_df
+        self.data = data  # rd3를 읽은 3차원 numpy 데이터
+        self.filter_df = filter_df  # filterCollect.csv 로 읽은 데이터프레임
 
     def filterRun(self):
         '''

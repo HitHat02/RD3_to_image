@@ -86,4 +86,6 @@ $RECYCLE.BIN/
 # Virtual Environment
 .venv
 
+.idea
+
 # End of https://www.toptal.com/developers/gitignore/api/windows,qt
