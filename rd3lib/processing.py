@@ -5,13 +5,15 @@
 import numpy as np
 
 def reshapeRd3(raw_rd3):
-    '''
-    1차원의 gpr 바이너리 파일을 3차원 바이너리 파일로 수정하는 함수
-    파일의 형태는 (깊이, 채널, 길이)형태로 나옴
+    """
+    1차원 GPR 바이너리 데이터를 (채널, 깊이, 트레이스 수) 형태의 3차원 배열로 변환합니다.
+    내부적으로 reshape 및 transpose 과정을 통해 RD3 데이터를 재구성합니다.
 
-    :param raw_rd3: 1차원 gpr np 파일(파일을 바로 읽었을때)
-    :return: 3차원 gpr np 파일
-    '''
+    :param raw_rd3: 1차원으로 읽은 RD3 원본 GPR 데이터
+    :type raw_rd3: numpy.ndarray
+    :return: (채널, 깊이, 트레이스 수)의 형태로 재배열된 3차원 GPR 데이터
+    :rtype: numpy.ndarray
+    """
     trace_count = len(raw_rd3) // (25 * 256)
     gpr = raw_rd3.reshape(trace_count, 25, 256)
 
@@ -22,14 +24,17 @@ def reshapeRd3(raw_rd3):
     return gpr_reshaped
 
 def cutRd3(rd3, start_idx, length):
-    '''
-    원하는 크기로 3차원 rd3 파일을 수정해주는 함수
+    """
+    3차원 RD3 GPR 데이터를 지정된 시작 인덱스와 길이에 따라 슬라이싱합니다.
 
-    :param rd3: 3차원 gpr np 파일
-    :param start_idx: 자르기 시작할 int 수치
-    :param length: 자를려고 하는 크기의 int 수치
-    :return: 잘라서 크기가 작아진 3차원 gpr np 파일
-    '''
-
+    :param rd3: 원본 3차원 GPR 데이터 (채널, 깊이, 트레이스 수)
+    :type rd3: numpy.ndarray
+    :param start_idx: 잘라낼 시작 위치 (트레이스 방향)
+    :type start_idx: int
+    :param length: 자를 길이 (트레이스 개수)
+    :type length: int
+    :return: 잘라낸 범위의 3차원 GPR 데이터
+    :rtype: numpy.ndarray
+    """
     end_idx = min(start_idx + length, rd3.shape[2])
     return rd3[:, :, start_idx:end_idx]

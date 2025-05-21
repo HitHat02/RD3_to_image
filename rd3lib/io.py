@@ -92,16 +92,21 @@ def extractionRad(path, filename):
     return chOffsets, distance_interval, ch
 
 def image_save(npdata, savepath):
-    '''
-    이미지를 저장하는 모듈
+    """
+    RD3 3차원 데이터를 슬라이스하여 정규화 및 업스케일 후,
+    각 축에 대한 특정 인덱스 슬라이스 이미지를 저장합니다.
 
-    :param npdata : numpy로 읽은 RD3파일
-    :param savepath : 저장할 파일 경로
+    슬라이스 방향은 (0,1), (1,2), (0,2) 축 기준으로 하며,
+    각 슬라이스에 대해 min-max 정규화와 업스케일을 수행한 뒤
+    Grayscale 이미지로 저장됩니다.
 
-    :return: 없음
-    '''
-
-
+    :param npdata: 3차원 GPR 데이터 (RD3에서 읽은 NumPy 배열)
+    :type npdata: numpy.ndarray
+    :param savepath: 이미지 저장 경로 (폴더)
+    :type savepath: str
+    :return: 없음 (이미지 파일을 지정된 경로에 저장)
+    :rtype: None
+    """
     # 데이터가 3차원인지 확인
     if npdata.ndim != 3:
         raise ValueError("입력 데이터는 반드시 3차원이어야 합니다.")

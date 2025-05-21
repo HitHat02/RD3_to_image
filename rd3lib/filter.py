@@ -11,14 +11,17 @@ import numpy as np
 import copy
 
 def apply_filter(npy_file):
-    '''
-    이 함수를 RD3파일에 적용하면
-    filterCollect.csv에서 default로 지정되어있는 필터를 적용한
-    numpy 데이터를 돌려준다
+    """
+    RD3 데이터에 필터를 자동 적용하는 함수.
 
-    :param npy_file: numpy로 읽은 RD3 바이너리 파일
-    :return: 필터를 적용한 numpy RD3_data
-    '''
+    filterCollect.csv 파일에 정의된 필터 중 default == 1로 지정된 필터들을
+    순서대로 적용하여 전처리된 numpy 데이터를 반환합니다.
+
+    :param npy_file: 필터를 적용할 3차원 numpy 배열 (RD3 데이터)
+    :type npy_file: numpy.ndarray
+    :return: 필터가 적용된 RD3 numpy 배열
+    :rtype: numpy.ndarray
+    """
     filter_df = pd.read_csv('.\\rd3lib\\filterCollect.csv')
 
     filter_ = filter_worker(npy_file, filter_df)
@@ -26,19 +29,33 @@ def apply_filter(npy_file):
     return RD3_data
 
 class filter_worker:
+    """
+        filterCollect.csv의 설정을 바탕으로 RD3 데이터에 다양한 필터를 순차적으로 적용하는 클래스.
+
+        :param data: 필터를 적용할 3차원 numpy 배열 (RD3 데이터)
+        :type data: numpy.ndarray
+        :param filter_df: filterCollect.csv를 pandas로 읽어온 데이터프레임
+        :type filter_df: pandas.DataFrame
+        """
     def __init__(self, data, filter_df):
         super().__init__()
         self.data = data  # rd3를 읽은 3차원 numpy 데이터
         self.filter_df = filter_df  # filterCollect.csv 로 읽은 데이터프레임
 
     def filterRun(self):
-        '''
-        filterCollect.csv 안에 있는 값을 이용해서
-        필터를 순서대로 적용하여 numpy 데이터를 수정한다
+        """
+        filterCollect.csv 내 default == 1로 설정된 필터를
+        filter_order 순서에 따라 적용합니다.
 
-        :return: np.int32(self.RD3_data)
-        '''
+        적용 가능한 필터:
+        - gain, range, las, edge, average
+        - y_differential, z_differential
+        - sign_smoother, kalman, background
+        - alingnSignal, ch_bias
 
+        :return: 모든 필터가 적용된 RD3 데이터
+        :rtype: numpy.ndarray (dtype=int32)
+        """
         # start_time = time.time()
         self.RD3_data = copy.deepcopy(self.data)
 

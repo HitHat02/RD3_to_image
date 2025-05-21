@@ -1,6 +1,3 @@
-
-
-
 import numpy as np
 import cv2
 import time
@@ -8,13 +5,14 @@ import time
 from scipy import special
 
 def logging_time(original_fn):
-    '''
-    필터가 적용되는 시간을 터미널에 로그로 표시를 해주는
-    파이선 데코레이터
+    """
+    필터 함수가 실행되는 데 걸리는 시간을 출력하는 데코레이터입니다.
 
-    :param original_fn: 적용할 함수
-    :return: wrapper_fn 함수를 이용하여 터미널에 로그를 작성
-    '''
+    :param original_fn: 데코레이팅할 원본 함수
+    :type original_fn: function
+    :return: 실행 시간을 출력한 뒤 결과를 반환하는 래퍼 함수
+    :rtype: function
+    """
     def wrapper_fn(*args, **kwargs):
         start_time = time.time()
         result = original_fn(*args, **kwargs)
@@ -24,7 +22,9 @@ def logging_time(original_fn):
     return wrapper_fn
 
 class Gain():
-
+    """
+        GPR 데이터에 대해 감쇠 곡선을 적용하는 Gain 필터 클래스입니다.
+    """
     def __init__(self):
 
         self.y_inter = 0.80  # default : 0.80   3.0
@@ -33,11 +33,26 @@ class Gain():
         self.inflection_range = 60  # default : 60
 
     def Curve(self, x):
+        """
+        감쇠 곡선을 정의하는 함수로, erf 함수를 기반으로 계산합니다.
+
+        :param x: 위치 값 (1차원)
+        :type x: numpy.ndarray
+        :return: 감쇠 계수 배열
+        :rtype: numpy.ndarray
+        """
         return (special.erf((x - self.inflection_point) / self.inflection_range) + 1) * self.grad_const + self.y_inter
 
     @logging_time
     def Gain(self, x):
+        """
+        Gain 필터를 적용하여 입력 데이터를 보정합니다.
 
+        :param x: 입력 GPR 데이터 (3차원)
+        :type x: numpy.ndarray
+        :return: Gain 필터가 적용된 데이터
+        :rtype: numpy.ndarray
+        """
         z = np.int16(self.Curve(np.arange(x.shape[1])))
         z = np.vstack(([z] * x.shape[0]))
         z = np.dstack(([z] * x.shape[2]))
@@ -47,14 +62,23 @@ class Gain():
 
 
 class Range():
-
+    """
+    입력값을 지정된 범위로 클리핑하는 필터 클래스입니다.
+    """
     def __init__(self):
 
         self.range_vaule = 5000  # default : 5000
 
     @logging_time
     def Range(self, x):
+        """
+        -range_value ~ +range_value 사이로 데이터를 제한합니다.
 
+        :param x: 입력 GPR 데이터
+        :type x: numpy.ndarray
+        :return: 클리핑된 데이터
+        :rtype: numpy.ndarray
+        """
         x = np.where(x <= self.range_vaule, x, self.range_vaule)
         x = np.where(x >= -self.range_vaule, x, -self.range_vaule)
 
@@ -62,7 +86,9 @@ class Range():
 
 
 class Las():
-
+    """
+    LAS 필터 (Local Adaptive Signal filter)를 적용하여 고주파 노이즈를 제거합니다.
+    """
     def __init__(self):
 
         self.las_ratio = 0.98  # default : 1.0
@@ -71,6 +97,14 @@ class Las():
 
     @logging_time
     def Las(self,x):
+        """
+        가우시안 커널을 사용하여 국소 평균을 구하고 비선형적으로 노이즈를 제거합니다.
+
+        :param x: 입력 GPR 데이터
+        :type x: numpy.ndarray
+        :return: LAS 필터 적용된 데이터
+        :rtype: numpy.ndarray
+        """
         sigma = self.sigmaNumber * self.sigma_constants
         kernel = cv2.getGaussianKernel(round(self.sigmaNumber), sigma)
         las_npy = cv2.filter2D(x.T, -1, kernel) + 0.001
@@ -80,22 +114,43 @@ class Las():
         return np.int16(x)
 
 class edge():
+    """
+    특정 임계값 이상의 edge 신호만 남기는 필터입니다.
+    """
     def __init__(self):
         self.edge_range = 1000
 
     @logging_time
     def edge(self,x):
+        """
+        edge_range를 기준으로 이상값만 유지하고 나머지는 0으로 설정합니다.
 
+        :param x: 입력 데이터
+        :type x: numpy.ndarray
+        :return: edge 필터 적용 결과
+        :rtype: numpy.ndarray
+        """
         x = np.where(((x >= self.edge_range) | (x <= -self.edge_range)), x, 0)
         return np.int16(x)
 
 class average():
+    """
+    이동 평균 필터를 적용하는 클래스입니다.
+    """
     def __init__(self):
         self.depth = 3
         self.dist = 3
 
     @logging_time
     def average(self, x):
+        """
+        지정된 depth, dist 크기로 평균 필터를 적용합니다.
+
+        :param x: 입력 GPR 데이터
+        :type x: numpy.ndarray
+        :return: 평균 필터가 적용된 데이터
+        :rtype: numpy.ndarray
+        """
         print(self.depth, self.dist)
         kernel = np.ones((self.depth, self.dist))/(self.depth*self.dist)
         blured = np.empty((x.shape))
@@ -105,10 +160,21 @@ class average():
         return np.int16(blured)
 
 class y_differential():
+    """
+    Y축 방향 미분을 수행하는 필터입니다.
+    """
     def __init__(self):
         self.y_window_para = 1
 
     def y_differential(self, x):
+        """
+        y_window_para 크기의 창을 사용하여 y축 방향 차분을 계산합니다.
+
+        :param x: 입력 GPR 데이터
+        :type x: numpy.ndarray
+        :return: Y 방향 미분 결과
+        :rtype: numpy.ndarray
+        """
         diff = np.zeros((x.shape))
         for i in range(x.shape[0]):
             for j in range(x.shape[1]):
@@ -118,10 +184,21 @@ class y_differential():
 
 
 class z_differential():
+    """
+    Z축 방향 미분을 수행하는 필터입니다.
+    """
     def __init__(self):
         self.z_window_para = 1
 
     def z_differential(self, x):
+        """
+        z_window_para 크기의 창을 사용하여 z축 방향 차분을 계산합니다.
+
+        :param x: 입력 GPR 데이터
+        :type x: numpy.ndarray
+        :return: Z 방향 미분 결과
+        :rtype: numpy.ndarray
+        """
         diff = np.zeros((x.shape))
         for i in range(x.shape[0]):
             for k in range(x.shape[2]):
@@ -130,7 +207,18 @@ class z_differential():
         return np.int16(diff)
 
 class sign_smoother():
+    """
+    GPR 데이터의 신호 부호(양/음)를 기준으로 경계 및 노이즈를 부드럽게 처리하는 필터입니다.
+    """
     def run_with_npy(self, x):
+        """
+        사전 정의된 방식으로 SIGN 및 ZERO 스무딩을 단계적으로 적용합니다.
+
+        :param x: 입력 3차원 데이터
+        :type x: numpy.ndarray
+        :return: 스무딩 처리된 데이터
+        :rtype: numpy.ndarray
+        """
         for The_number_of_consideration_for_one_direction1 in range(1, 2):
             for The_number_of_consideration_for_one_direction2 in range(3, 4):
                 for The_number_of_consideration_for_one_direction3 in range(2, 3):
@@ -241,6 +329,9 @@ class sign_smoother():
         return (npy_result)
 
 class kalman_filter:
+    """
+    칼만 필터를 적용하여 신호의 예측 및 보정을 수행하는 클래스입니다.
+    """
     def __init__(
             self,
             data = None,
@@ -255,6 +346,14 @@ class kalman_filter:
         self.gain = gain
 
     def run(self, data = None):
+        """
+        입력 데이터에 대해 Kalman 보정 및 예측을 적용하여 필터링된 결과를 반환합니다.
+
+        :param data: 필터링할 3차원 데이터 (선택 사항, 기본은 self.data 사용)
+        :type data: numpy.ndarray
+        :return: 필터가 적용된 GPR 데이터
+        :rtype: numpy.ndarray
+        """
         if not isinstance(data, type(None)):
             self.data = data
 
@@ -316,10 +415,21 @@ class kalman_filter:
 
 
 class Backgroud_remove:
+    """
+    각 채널의 평균값을 기반으로 배경 신호를 제거하는 필터입니다.
+    """
     def __init__(self):
         self.percent = 1
 
     def run(self, gpr_aligned):
+        """
+        채널별 평균을 사용해 배경 성분을 제거합니다.
+
+        :param gpr_aligned: 입력 GPR 데이터
+        :type gpr_aligned: numpy.ndarray
+        :return: 배경 제거된 데이터
+        :rtype: numpy.ndarray
+        """
         gpr_AB = gpr_aligned * 0
         for bg_channel in range(0, gpr_aligned.shape[0]):
             for bg_depth2 in range(0, gpr_aligned.shape[1]):
@@ -329,10 +439,23 @@ class Backgroud_remove:
         return np.int16(gpr_AB)
 
 class alignGround:
+    """
+    지면 반사점을 기준으로 GPR 데이터를 정렬하는 클래스입니다.
+    """
     def __init__(self):
         pass
 
     def run(self, gpr_reshaped, manual_add = None):
+        """
+        평균 신호를 기준으로 지면을 찾아 정렬하고, 필요시 수동 보정도 적용합니다.
+
+        :param gpr_reshaped: 입력 GPR 데이터
+        :type gpr_reshaped: numpy.ndarray
+        :param manual_add: 수동 정렬 보정값 (선택)
+        :type manual_add: list[int] or None
+        :return: 정렬된 데이터
+        :rtype: numpy.ndarray
+        """
         ground_idx_list = []
 
         for align_channel in range(0, gpr_reshaped.shape[0]):
@@ -392,10 +515,22 @@ class alignGround:
 
 
 class alingnSignal:
+    """
+    채널별 신호 강도 범위를 기준으로 스케일을 정규화하는 필터입니다.
+    """
     def __init__(self):
         pass
 
     def alingnSignal(self, gpr_reshaped):
+        """
+        채널 간 신호 범위 차이를 줄이기 위해 보정 계수를 곱해 정렬합니다.
+
+        :param gpr_reshaped: 입력 GPR 데이터
+        :type gpr_reshaped: numpy.ndarray
+        :return: 스케일 정규화된 데이터
+        :rtype: numpy.ndarray
+        """
+
         minimum_list = [-1000 for _ in range(0, gpr_reshaped.shape[0])]
         maximum_list = [1001 for _ in range(0, gpr_reshaped.shape[0])]
 
@@ -433,8 +568,21 @@ class alingnSignal:
         return np.int16(gpr_reshaped)
 
 class ch_bias:
+    """
+    각 채널별 오프셋을 기준으로 보정하는 필터입니다.
+    """
     def __init__(self):
         pass
 
     def ch_bias(self, data, start_bias):
+        """
+        start_bias 값을 이용해 채널별 기준값을 제거합니다.
+
+        :param data: 입력 GPR 데이터
+        :type data: numpy.ndarray
+        :param start_bias: 채널별 평균 기준값
+        :type start_bias: numpy.ndarray
+        :return: 바이어스가 제거된 데이터
+        :rtype: numpy.ndarray
+        """
         return data - np.broadcast_to(start_bias[:, np.newaxis, np.newaxis], data.shape)
