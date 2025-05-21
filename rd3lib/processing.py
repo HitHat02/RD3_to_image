@@ -46,7 +46,7 @@ def alignSignal(path, filename, gpr_reshaped):
 
     :return gpr_reshaped: 채널 간 정규화가 적용된 GPR 데이터 3차원 배열 (np.ndarray)
     """
-    ch = extractionRad(path, filename)
+    ch, chOffsets, distance_interval = extractionRad(path, filename)
     minimum_list = []
     maximum_list = []
 
@@ -98,7 +98,7 @@ def alignGround(path, filename, gpr_reshaped):
     
     :return gpr_reshaped2: 지표면을 기준으로 정렬된 GPR 데이터 (np.ndarray), shape = (채널 수, 256, 거리 수)
     """
-    ch = extractionRad(path, filename)
+    ch, chOffsets, distance_interval = extractionRad(path, filename)
 
     ground_idx_list = [10 for i in range(ch)]
     min_idx = 0
@@ -146,7 +146,7 @@ def alignChannel(path, filename, gpr_reshaped2):
     
     return gpr_reshaped2: 채널 간 수평 정렬이 적용된 GPR 데이터 (np.ndarray), shape = (채널 수, 256, 거리 수)
     """
-    chOffsets, distance_interval = extractionRad(path, filename)
+    ch, chOffsets, distance_interval = extractionRad(path, filename)
 
     gpr_aligned = gpr_reshaped2
     chOffsets = np.array(chOffsets)
