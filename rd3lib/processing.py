@@ -38,6 +38,13 @@ def cutRd3(rd3, start_idx, length):
 
 def alignSignal(path, filename, gpr_reshaped):
     """
+    GPR 데이터를 채널 간 정렬 및 정규화하는 함수
+
+    :param path: .rad 파일이 존재하는 디렉토리 경로, 문자열(str) 형식
+    :param filename: 처리 대상 .rd3 파일 이름, 문자열(str) 형식
+    :param gpr_reshaped: (채널 수, 깊이, 거리) 형태의 GPR 데이터 3차원 배열 (np.ndarray)
+
+    :return gpr_reshaped: 채널 간 정규화가 적용된 GPR 데이터 3차원 배열 (np.ndarray)
     """
     ch = extractionRad(path, filename)
     minimum_list = []
@@ -83,7 +90,13 @@ def alignSignal(path, filename, gpr_reshaped):
 def alignGround(path, filename, gpr_reshaped):
     """
     각 채널마다 지표면의 반사 위치가 서로 다를 수 있기 때문에,
-    기준선에 맞춰 수직으로 정렬해주는 함수
+    GPR 데이터에서 지표면(ground)을 기준으로 정렬한 결과를 반환해주는 함수
+
+    :param path: .rad 파일이 존재하는 디렉토리 경로, 문자열(str) 형식
+    :param filename: 처리 대상 .rd3 파일 이름, 문자열(str) 형식
+    :param gpr_reshaped: (채널 수, 깊이, 거리) 형태의 GPR 데이터 3차원 배열 (np.ndarray)
+    
+    :return gpr_reshaped2: 지표면을 기준으로 정렬된 GPR 데이터 (np.ndarray), shape = (채널 수, 256, 거리 수)
     """
     ch = extractionRad(path, filename)
 
@@ -125,8 +138,13 @@ def alignGround(path, filename, gpr_reshaped):
 
 def alignChannel(path, filename, gpr_reshaped2):
     """
-    0.044, 2.58 으로 거리가 차이나는 채널 간 위치 오차 보정해주는 함수, 오프셋 이동 후 앞 부분은 평균값으로 채워 
-    수평정렬을 완료하는 함수
+    0.044, 2.58 으로 거리가 차이나는 채널 간 위치 오차 보정해주는 함수
+
+    :param path: .rad 파일이 존재하는 디렉토리 경로, 문자열(str) 형식
+    :param filename: 처리 대상 .rd3 파일 이름, 문자열(str) 형식
+    :param gpr_reshaped2: 지표면 기준으로 정렬된 GPR 데이터 3차원 배열 (np.n
+    
+    return gpr_reshaped2: 채널 간 수평 정렬이 적용된 GPR 데이터 (np.ndarray), shape = (채널 수, 256, 거리 수)
     """
     chOffsets, distance_interval = extractionRad(path, filename)
 
