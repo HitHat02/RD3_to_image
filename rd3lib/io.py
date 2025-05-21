@@ -2,6 +2,7 @@
 rd3, rad 파일 읽기 등 I/O 관련 함수
 '''
 import numpy as np
+import os
 
 def readRd3(filepath):
     with open(filepath, "rb") as f:
@@ -16,7 +17,6 @@ def readRad(path, filename):
     :param path: local에서의 파일 경로 (string)
     :param filename: 파일경로에 있는, '.rd3' 확장자를 가진 파일명
 
-    :return: rad (np.array)
     :return: infoDict (dict)
     """
     nameRad = filename[:-3] + "rad"
@@ -41,9 +41,8 @@ def readRad(path, filename):
 
         header_byte_len += len((line + "\n").encode("utf-8"))
 
-    rad = np.frombuffer(data[header_byte_len:], dtype=np.short)
 
-    return rad, infoDict
+    return infoDict
 
 def extractionRad(path, filename):
     """
@@ -56,7 +55,7 @@ def extractionRad(path, filename):
     :return distance_interval : rad 내부에 있는 distance interval int 값
     :return ch : rad 내부에 있는 NUMBER_OF_CH의 int 값
     """
-    rad, infoDict = readRad(path, filename)
+    infoDict = readRad(path, filename)
 
     chOffsets_str = infoDict.get("CH_Y_OFFSETS", "")
     distance_interval_str = infoDict.get("DISTANCE INTERVAL", "0")

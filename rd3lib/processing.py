@@ -3,6 +3,7 @@
 '''
 
 import numpy as np
+from rd3lib.io import extractionRad
 
 def reshapeRd3(raw_rd3):
     '''
@@ -33,3 +34,91 @@ def cutRd3(rd3, start_idx, length):
 
     end_idx = min(start_idx + length, rd3.shape[2])
     return rd3[:, :, start_idx:end_idx]
+
+
+def alignSignal(path, filename):
+    """
+    """
+    chOffsets, distance_interval, ch = extractionRad(path, filename)
+    minimum_list = []
+    maximum_list = []
+
+    for align_channel in range(ch):
+        ground_avg_list = []
+        for align_depth_001 in range(256):
+            ground_avg_list.append(np.mean(gpr_reshaped[align_channel][align_depth_001, :]))
+        ground_avg_list = np.int32(ground_avg_list)
+
+        for align_depth_002 in range(0, len(ground_avg_list - 1)):
+            if ground_avg_list[align_depth_002] < -1000 and ground_avg_list[align_depth_002 + 1] - ground_avg_list[align_depth_002] > 0:
+                minimum = ground_avg_list[align_depth_002]
+                min_idx = align_depth_002
+                minimum_list.append(minimum)
+                break
+        
+        for align_depth_003 in range(min_idx, len(ground_avg_list - 1)):
+            if ground_avg_list[align_depth_003] > 1000 and ground_avg_list[align_depth_003 +1] - ground_avg_list[align_depth_003] < 0:
+                maximum = ground_avg_list[align_depth_003]
+                max_idx = align_depth_003
+                maximum_list.append(maximum)
+                break
+        
+        
+
+
+
+def alignGround(path, filename):
+    """
+    각 채널마다 지표면의 반사 위치가 서로 다를 수 있기 때문에,
+    기준선에 맞춰 수직으로 정렬해주는 함수
+    """
+    ch = extractionRad(path, filename)
+
+    ground_idx_list = [10 for i in range(ch)]
+    min_idx = 0
+    max_idx = 0
+
+    for align_channel in range(ch):
+        ground_avg_list = []
+        for align_depth_001 in range(256):
+            ground_avg_list.append(np.mean(gpr_reshape[align_channel][align_depth_001, :]))
+        ground_avg_list = np.int32(ground_avg_list)
+
+        for align_depth_002 in range(0, len(ground_avg_list - 1)):
+            if ground_avg_list[align_depth_002] < -1000 and ground_avg_list[align_depth_002 + 1] - ground_avg_list[align_depth_002] > 0:
+                minimun = ground_avg_list[align_depth_002]
+                min_idx = align_depth_002
+                break
+        
+        for align_depth_003 in range(min_idx, len(ground_avg_list - 1)):
+            if ground_avg_list[align_depth_003] > 1000 and ground_avg_list[align_depth_003 + 1] - ground_avg_list[align_depth_003] < 0:
+                maximum = ground_avg_list[align_depth_003]
+                max_idx = align_depth_003
+                break
+        
+        for align_depth_004 in range(min_idx, max_idx + 1):
+            if ground_avg_list[align_depth_004] > 0:
+                uint_idx = align_depth_004
+                mean_idx = (min_idx + max_idx) / 2
+                ground_idx = round((uint_idx + mean_idx) / 2)
+                ground_idx_list[align_channel] = ground_idx
+                break
+
+def alignChannel(path, filename):
+    """
+    채널 간 위치 오차 보정해주는 함수, 오프셋 이동 후 앞 부분은 평균값으로 채워 
+    수평정렬을 완료하는 함수
+    """
+    chOffsets, distance_interval = extractionRad(path, filename)
+
+    gpr_aligned = gpr_reshape
+    chOffsets = np.array(chOffsets)
+    chOffsets -= np.min(chOffsets)
+
+    for i, value in enumerate(chOffsets):
+        if value == 0:
+            continue
+        gpr_aligned[i,:,int(value/distance_interval):] = gpr_reshape[i,:,:-int(value/distance_interval)]
+        for align_depth3 in range(256):
+            gpr_aligned[i, align_depth3, :int(value/distance_interval)] = gpr_aligned[i, align_depth3, :int(value/distance_interval)]*0 
+            int(np.mean(gpr_aligned[i, align_depth3, int(value/distance_interval):]))
