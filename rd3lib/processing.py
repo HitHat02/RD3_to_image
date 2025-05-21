@@ -51,7 +51,7 @@ def alignSignal(path, filename, gpr_reshaped):
 
     :return gpr_reshaped: 채널 간 정규화가 적용된 GPR 데이터 3차원 배열 (np.ndarray)
     """
-    ch = extractionRad(path, filename)
+    chOffsets, distance_interval, ch = extractionRad(path, filename)
     minimum_list = []
     maximum_list = []
 
@@ -152,17 +152,20 @@ def alignChannel(path, filename, gpr_reshaped2):
     return gpr_reshaped2: 채널 간 수평 정렬이 적용된 GPR 데이터 (np.ndarray), shape = (채널 수, 256, 거리 수)
     """
     chOffsets, distance_interval, ch = extractionRad(path, filename)
-
-    gpr_aligned = gpr_reshaped2
+    print(f"chOffsets:{chOffsets}")
+    print(f"distance_interval:{distance_interval}")
+    gpr_aligned = np.copy(gpr_reshaped2)
     chOffsets = np.array(chOffsets)
     chOffsets -= np.min(chOffsets)
 
     for i, value in enumerate(chOffsets):
         if value == 0:
             continue
-        gpr_aligned[i,:,int(value/distance_interval):] = gpr_reshaped2[i,:,:-int(value/distance_interval)]
-        for align_depth3 in range(256):
-            gpr_aligned[i, align_depth3, :int(value/distance_interval)] = gpr_aligned[i, align_depth3, :int(value/distance_interval)]*0 
-            + int(np.mean(gpr_aligned[i, align_depth3, int(value/distance_interval):]))
+        val_scalar = int(value / distance_interval)  # val_scalar : 한 체널에 대한 shift 된 픽셀 개수를 뜻함
+        print(f"{i}번째 val_scalar: {val_scalar}")
+        gpr_aligned[i, :, val_scalar:] = gpr_reshaped2[i, :, :-val_scalar]
+        for align_depth3 in range(0, 256):
+            gpr_aligned[i, align_depth3, :val_scalar] = (gpr_aligned[i, align_depth3, :val_scalar] * 0.1
+                                                        + int(np.mean(gpr_aligned[i, align_depth3, val_scalar:])))
 
-        return gpr_aligned
+    return gpr_aligned

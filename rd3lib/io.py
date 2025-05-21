@@ -111,22 +111,18 @@ def image_save(npdata, savepath):
 
     os.makedirs(savepath, exist_ok=True)
     i = 20
-    figsize = (8, 5)
     dpi = 100
-    vmin = -3000
-    vmax = 3000
-    scale = 4
 
     slice_configs = [
-        ("slice_횡단면_axis2", lambda i: npdata[:, :, i], npdata.shape[2]),
-        ("slice_종단면_axis0", lambda i: npdata[i, :, :], npdata.shape[0]),
-        ("slice_평단면_axis1", lambda i: npdata[:, i, :], npdata.shape[1]),
+        ("slice_횡단면_axis2", lambda i: npdata[:, :, i].T, npdata.shape[2], (3, 6)),
+        ("slice_종단면_axis0", lambda i: npdata[i, :, :], npdata.shape[0], (8, 5)),
+        ("slice_평단면_axis1", lambda i: npdata[:, i, :], npdata.shape[1], (8, 3)),
     ]
 
-    for name, slicer, max_index in slice_configs:
+    for name, slicer, max_index, figsize in slice_configs:
         slice_data = slicer(i)
-        norm_img = normalize_minmax(slice_data, vmin=vmin, vmax=vmax)
-        upscaled = upscale_image(norm_img, scale=scale)
+        norm_img = normalize_minmax(slice_data, vmin=-3000, vmax=3000)
+        upscaled = upscale_image(norm_img, scale=4)
 
         fig = plt.figure(figsize=figsize, dpi=dpi)
         plt.imshow(upscaled, cmap="gray", aspect='auto')
