@@ -118,9 +118,9 @@ def image_save(npdata, savepath):
     scale = 4
 
     slice_configs = [
-        ("slice_0_1_axis2", lambda i: npdata[:, :, i], npdata.shape[2]),
-        ("slice_1_2_axis0", lambda i: npdata[i, :, :], npdata.shape[0]),
-        ("slice_0_2_axis1", lambda i: npdata[:, i, :], npdata.shape[1]),
+        ("slice_횡단면_axis2", lambda i: npdata[:, :, i], npdata.shape[2]),
+        ("slice_종단면_axis0", lambda i: npdata[i, :, :], npdata.shape[0]),
+        ("slice_평단면_axis1", lambda i: npdata[:, i, :], npdata.shape[1]),
     ]
 
     for name, slicer, max_index in slice_configs:
@@ -129,7 +129,7 @@ def image_save(npdata, savepath):
         upscaled = upscale_image(norm_img, scale=scale)
 
         fig = plt.figure(figsize=figsize, dpi=dpi)
-        plt.imshow(upscaled, cmap="gray", aspect='auto')  # 부드러운 출력
+        plt.imshow(upscaled, cmap="gray", aspect='auto')
         plt.axis('off')
         fig.savefig(os.path.join(savepath, f"{name}_{i:03}.png"), bbox_inches='tight', pad_inches=0)
         plt.close(fig)
