@@ -2,22 +2,40 @@
 rd3, rad 파일 읽기 등 I/O 관련 함수
 '''
 import numpy as np
+import os
+import matplotlib.pyplot as plt
+from rd3lib.utils import normalize_minmax, upscale_image
 
-def readRd3(filepath):
-    with open(filepath, "rb") as f:
+
+def readRd3(path, filename):
+    """
+    지정된 경로에서 .rd3 바이너리 파일을 열어, 신호 데이터를 NumPy 배열로 변환하여 반환합니다.
+
+    :param path: 파일이 저장된 폴더 경로
+    :type path: str
+    :param filename: 읽을 .rd3 파일명
+    :type filename: str
+    :return: 1차원 NumPy 배열 형태의 신호 데이터
+    :rtype: numpy.ndarray
+    """
+    with open(os.path.join(path, filename), "rb") as f:
         data = f.read()
     rd3_data = np.frombuffer(data, dtype=np.short)
     return rd3_data
 
 def readRad(path, filename):
     """
-    파일 확장자를 rad로 바꾸고, 텍스트 헤더와 binary 신호 데이터를 모두 읽어오는 함수
+    주어진 경로의 .rad 파일을 읽고, 텍스트 헤더 정보를 딕셔너리로 파싱한 후,
+    이어지는 바이너리 데이터를 NumPy 배열로 반환합니다.
 
-    :param path: local에서의 파일 경로 (string)
-    :param filename: 파일경로에 있는, '.rd3' 확장자를 가진 파일명
-
-    :return: rad (np.array)
-    :return: infoDict (dict)
+    :param path: 파일이 저장된 폴더 경로
+    :type path: str
+    :param filename: 확장자가 .rd3인 파일 이름 (rad 확장자로 자동 변환됨)
+    :type filename: str
+    :return: 바이너리 신호 데이터를 담은 NumPy 배열
+    :rtype: numpy.ndarray
+    :return: 헤더 정보를 담은 딕셔너리
+    :rtype: dict
     """
     nameRad = filename[:-3] + "rad"
     with open(os.path.join(path, nameRad), "rb") as f:
@@ -47,14 +65,18 @@ def readRad(path, filename):
 
 def extractionRad(path, filename):
     """
-    .rad 파일 내부의 CH_Y_OFFSETS과 DISTANCE INTERVAL의 값을 추출해 내는 함수
+    지정된 .rad 파일에서 CH_Y_OFFSETS, DISTANCE INTERVAL, NUMBER_OF_CH 값을 추출하여 반환합니다.
 
-    :param path : local의 파일 경로 , string 형태
-    :param filename : 파일 경로에 있는 확장자가(.rd3)인 파일
-
-    :return chOffsets : rad 내부에 있는 CH_Y_OFFSETS 리스트 값
-    :return distance_interval : rad 내부에 있는 distance interval int 값
-    :return ch : rad 내부에 있는 NUMBER_OF_CH의 int 값
+    :param path: 파일이 저장된 폴더 경로
+    :type path: str
+    :param filename: .rd3 확장자를 가진 파일명 (rad 확장자로 자동 변환됨)
+    :type filename: str
+    :return: 채널 오프셋 리스트 (CH_Y_OFFSETS)
+    :rtype: list[float]
+    :return: 거리 간격 값 (DISTANCE INTERVAL)
+    :rtype: float
+    :return: 채널 개수 (NUMBER_OF_CH)
+    :rtype: int
     """
     rad, infoDict = readRad(path, filename)
 
@@ -68,3 +90,45 @@ def extractionRad(path, filename):
 
 
     return chOffsets, distance_interval, ch
+
+def image_save(npdata, savepath):
+    '''
+    이미지를 저장하는 모듈
+
+    :param npdata : numpy로 읽은 RD3파일
+    :param savepath : 저장할 파일 경로
+
+    :return: 없음
+    '''
+
+
+    # 데이터가 3차원인지 확인
+    if npdata.ndim != 3:
+        raise ValueError("입력 데이터는 반드시 3차원이어야 합니다.")
+
+    os.makedirs(savepath, exist_ok=True)
+    i = 20
+    figsize = (8, 5)
+    dpi = 100
+    vmin = -3000
+    vmax = 3000
+    scale = 4
+
+    slice_configs = [
+        ("slice_0_1_axis2", lambda i: npdata[:, :, i], npdata.shape[2]),
+        ("slice_1_2_axis0", lambda i: npdata[i, :, :], npdata.shape[0]),
+        ("slice_0_2_axis1", lambda i: npdata[:, i, :], npdata.shape[1]),
+    ]
+
+    for name, slicer, max_index in slice_configs:
+        slice_data = slicer(i)
+        norm_img = normalize_minmax(slice_data, vmin=vmin, vmax=vmax)
+        upscaled = upscale_image(norm_img, scale=scale)
+
+        fig = plt.figure(figsize=figsize, dpi=dpi)
+        plt.imshow(upscaled, cmap="gray", aspect='auto')  # 부드러운 출력
+        plt.axis('off')
+        fig.savefig(os.path.join(savepath, f"{name}_{i:03}.png"), bbox_inches='tight', pad_inches=0)
+        plt.close(fig)
+
+    print(f"슬라이스 이미지가 '{savepath}' 디렉토리에 저장되었습니다.")
