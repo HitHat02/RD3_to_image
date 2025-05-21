@@ -3,6 +3,7 @@ rd3, rad 파일 읽기 등 I/O 관련 함수
 '''
 import numpy as np
 import os
+import os
 import matplotlib.pyplot as plt
 from rd3lib.utils import normalize_minmax, upscale_image
 
@@ -32,8 +33,6 @@ def readRad(path, filename):
     :type path: str
     :param filename: 확장자가 .rd3인 파일 이름 (rad 확장자로 자동 변환됨)
     :type filename: str
-    :return: 바이너리 신호 데이터를 담은 NumPy 배열
-    :rtype: numpy.ndarray
     :return: 헤더 정보를 담은 딕셔너리
     :rtype: dict
     """
@@ -59,9 +58,8 @@ def readRad(path, filename):
 
         header_byte_len += len((line + "\n").encode("utf-8"))
 
-    rad = np.frombuffer(data[header_byte_len:], dtype=np.short)
 
-    return rad, infoDict
+    return infoDict
 
 def extractionRad(path, filename):
     """
@@ -78,7 +76,7 @@ def extractionRad(path, filename):
     :return: 채널 개수 (NUMBER_OF_CH)
     :rtype: int
     """
-    rad, infoDict = readRad(path, filename)
+    infoDict = readRad(path, filename)
 
     chOffsets_str = infoDict.get("CH_Y_OFFSETS", "")
     distance_interval_str = infoDict.get("DISTANCE INTERVAL", "0")
