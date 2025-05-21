@@ -149,7 +149,7 @@ def alignChannel(path, filename, gpr_reshaped2):
     """ 
     chOffsets, distance_interval, ch = extractionRad(path, filename)
 
-    gpr_aligned = gpr_reshaped2
+    gpr_aligned = np.copy(gpr_reshaped2)
     chOffsets = np.array(chOffsets)
     chOffsets -= np.min(chOffsets)
 
