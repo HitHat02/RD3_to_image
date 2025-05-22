@@ -40,132 +40,121 @@ def cutRd3(rd3, start_idx, length):
     end_idx = min(start_idx + length, rd3.shape[2])
     return rd3[:, :, start_idx:end_idx]
 
+def detect_min_max(signal, neg_thresh=-1000, pos_thresh=1000):
+    """
+    하나의 채널 평균 신호에서 최소/최대값 위치 반환
+    alignGround에 사용하는 함수
+    """
+    min_idx = max_idx = None
+    for i in range(len(signal) - 1):
+        if min_idx is None and signal[i] < neg_thresh and signal[i+1] - signal[i] > 0:
+            min_idx = i
+        if min_idx is not None and signal[i] > pos_thresh and signal[i+1] - signal[i] < 0:
+            max_idx = i
+            break
+    return min_idx, max_idx
 
-def alignSignal(path, filename, gpr_reshaped):
+def alignSignal(path, filename, gpr_data, depth=256):
     """
     GPR 데이터를 채널 간 정렬 및 정규화하는 함수
 
     :param path: .rad 파일이 존재하는 디렉토리 경로, 문자열(str) 형식
     :param filename: 처리 대상 .rd3 파일 이름, 문자열(str) 형식
-    :param gpr_reshaped: (채널 수, 깊이, 거리) 형태의 GPR 데이터 3차원 배열 (np.ndarray)
+    :param gpr_data: (채널 수, 깊이, 거리) 형태의 GPR 데이터 3차원 배열 (np.ndarray)
 
-    :return gpr_reshaped: 채널 간 정규화가 적용된 GPR 데이터 3차원 배열 (np.ndarray)
+    :return gpr_normalized: 채널 간 정규화가 적용된 GPR 데이터 3차원 배열 (np.ndarray)
     """
-    chOffsets, distance_interval, ch = extractionRad(path, filename)
-    minimum_list = []
-    maximum_list = []
+    _, _, ch = extractionRad(path, filename)
+    mins, maxs = [], []
 
-    for align_channel in range(ch):
-        ground_avg_list = []
-        for align_depth_001 in range(256):
-            ground_avg_list.append(np.mean(gpr_reshaped[align_channel][align_depth_001, :]))
-        ground_avg_list = np.int32(ground_avg_list)
+    # 1단계: 채널별 ground 평균 계산 후 min/max 탐지
+    for i in range(ch):
+        signal_avg = np.mean(gpr_data[i, :depth, :], axis=1)
+        min_idx, max_idx = detect_min_max(signal_avg)
+        if min_idx is not None and max_idx is not None:
+            mins.append(signal_avg[min_idx])
+            maxs.append(signal_avg[max_idx])
+        else:
+            # fallback 처리
+            mins.append(-1000)
+            maxs.append(1000)
 
-        for align_depth_002 in range(0, len(ground_avg_list - 1)):
-            if ground_avg_list[align_depth_002] < -1000 and ground_avg_list[align_depth_002 + 1] - ground_avg_list[align_depth_002] > 0:
-                minimum = ground_avg_list[align_depth_002]
-                min_idx = align_depth_002
-                minimum_list.append(minimum)
-                break
-        
-        for align_depth_003 in range(min_idx, len(ground_avg_list - 1)):
-            if ground_avg_list[align_depth_003] > 1000 and ground_avg_list[align_depth_003 +1] - ground_avg_list[align_depth_003] < 0:
-                maximum = ground_avg_list[align_depth_003]
-                max_idx = align_depth_003
-                maximum_list.append(maximum)
-                break
-        
-        range_list = np.array(maximum_list) - np.array(minimum_list)
-        multiple_list = (range_list.max() / range_list)**0.5
+    ranges = np.array(maxs) - np.array(mins)
+    factors = np.sqrt(ranges.max() / ranges)
 
-        range_list = np.array(maximum_list) - np.array(minimum_list)
-        multiple_list = (range_list.max() / range_list)**0.5
-
-        align_test2_mean_mult = np.empty((gpr_reshaped.shape))
-        for i in range(gpr_reshaped.shape[1]):
-            for j in range(gpr_reshaped.shape[2]):
-                align_test2_mean_mult[:, i, j] = gpr_reshaped[:, i, j] * multiple_list
-
-        gpr_reshaped = align_test2_mean_mult
-        return gpr_reshaped
+    # 2단계: 채널별 정규화
+    gpr_normalized = gpr_data * factors[:, None, None]
+    return gpr_normalized
 
 
+def detect_ground_index(signal, neg_thresh=-1000, pos_thresh=1000):
+    """
+    평균 신호에서 지표면 범위를 찾아 중간 ground index 반환
+    alignGround에 사용하는 함수
+    """
+    min_idx = max_idx = None
+    for i in range(len(signal) - 1):
+        if min_idx is None and signal[i] < neg_thresh and signal[i+1] - signal[i] > 0:
+            min_idx = i
+        if min_idx is not None and signal[i] > pos_thresh and signal[i+1] - signal[i] < 0:
+            max_idx = i
+            break
+    if min_idx is not None and max_idx is not None:
+        for i in range(min_idx, max_idx + 1):
+            if signal[i] > 0:
+                return round((i + (min_idx + max_idx) / 2) / 2)
+    return 10  # fallback index
 
-
-def alignGround(path, filename, gpr_reshaped):
+def alignGround(path, filename, gpr_data, depth=256, pad=10):
     """
     각 채널마다 지표면의 반사 위치가 서로 다를 수 있기 때문에,
     GPR 데이터에서 지표면(ground)을 기준으로 정렬한 결과를 반환해주는 함수
 
     :param path: .rad 파일이 존재하는 디렉토리 경로, 문자열(str) 형식
     :param filename: 처리 대상 .rd3 파일 이름, 문자열(str) 형식
-    :param gpr_reshaped: (채널 수, 깊이, 거리) 형태의 GPR 데이터 3차원 배열 (np.ndarray)
-    
+    :param gpr_data: (채널 수, 깊이, 거리) 형태의 GPR 데이터 3차원 배열 (np.ndarray)
+
     :return gpr_reshaped2: 지표면을 기준으로 정렬된 GPR 데이터 (np.ndarray), shape = (채널 수, 256, 거리 수)
     """
-    chOffsets, distance_interval, ch = extractionRad(path, filename)
+    _, _, ch = extractionRad(path, filename)
+    ground_aligned = np.zeros_like(gpr_data)
 
-    ground_idx_list = [10 for i in range(ch)]
-    min_idx = 0
-    max_idx = 0
+    for i in range(ch):
+        signal_avg = np.mean(gpr_data[i, :depth, :], axis=1)
+        signal_avg = signal_avg.astype(np.int32)
+        ground_idx = detect_ground_index(signal_avg)
 
-    for align_channel in range(ch):
-        ground_avg_list = []
-        for align_depth_001 in range(256):
-            ground_avg_list.append(np.mean(gpr_reshaped[align_channel][align_depth_001, :]))
-        ground_avg_list = np.int32(ground_avg_list)
+        start = max(ground_idx - pad, 0)
+        end = depth
+        length = end - start
 
-        for align_depth_002 in range(0, len(ground_avg_list - 1)):
-            if ground_avg_list[align_depth_002] < -1000 and ground_avg_list[align_depth_002 + 1] - ground_avg_list[align_depth_002] > 0:
-                minimun = ground_avg_list[align_depth_002]
-                min_idx = align_depth_002
-                break
-        
-        for align_depth_003 in range(min_idx, len(ground_avg_list - 1)):
-            if ground_avg_list[align_depth_003] > 1000 and ground_avg_list[align_depth_003 + 1] - ground_avg_list[align_depth_003] < 0:
-                maximum = ground_avg_list[align_depth_003]
-                max_idx = align_depth_003
-                break
-        
-        for align_depth_004 in range(min_idx, max_idx + 1):
-            if ground_avg_list[align_depth_004] > 0:
-                uint_idx = align_depth_004
-                mean_idx = (min_idx + max_idx) / 2
-                ground_idx = round((uint_idx + mean_idx) / 2)
-                ground_idx_list[align_channel] = ground_idx
-                break
+        ground_aligned[i, :length, :] = gpr_data[i, start:end, :]
 
-    gpr_reshaped2 = np.zeros((ch, 256, len(gpr_reshaped[0][0])))
-    for align_channel3 in range(0, ch):
-        gpr_reshaped2[align_channel3, 0:256 - ground_idx_list[align_channel3] + 10, :]\
-            = gpr_reshaped[align_channel3, ground_idx_list[align_channel3] - 10:256, :]
-    return gpr_reshaped2
+    return ground_aligned
 
-def alignChannel(path, filename, gpr_reshaped2):
+def alignChannel(path, filename, gpr_data, depth=256):
     """
     0.044, 2.58 으로 거리가 차이나는 채널 간 위치 오차 보정해주는 함수
 
     :param path: .rad 파일이 존재하는 디렉토리 경로, 문자열(str) 형식
     :param filename: 처리 대상 .rd3 파일 이름, 문자열(str) 형식
     :param gpr_reshaped2: 지표면 기준으로 정렬된 GPR 데이터 3차원 배열 (np.n
-    
+
     return gpr_reshaped2: 채널 간 수평 정렬이 적용된 GPR 데이터 (np.ndarray), shape = (채널 수, 256, 거리 수)
     """
-    chOffsets, distance_interval, ch = extractionRad(path, filename)
-    print(f"chOffsets:{chOffsets}")
-    print(f"distance_interval:{distance_interval}")
-    gpr_aligned = np.copy(gpr_reshaped2)
-    chOffsets = np.array(chOffsets)
-    chOffsets -= np.min(chOffsets)
+    ch_offsets, distance_interval, _ = extractionRad(path, filename)
+    offsets = np.array(ch_offsets) - np.min(ch_offsets)  # 가장 가까운 채널을 기준으로 정렬
+    gpr_aligned = np.copy(gpr_data)
 
-    for i, value in enumerate(chOffsets):
-        if value == 0:
+    for ch_idx, offset in enumerate(offsets):
+        if offset == 0:
             continue
-        val_scalar = int(value / distance_interval)  # val_scalar : 한 체널에 대한 shift 된 픽셀 개수를 뜻함
-        print(f"{i}번째 val_scalar: {val_scalar}")
-        gpr_aligned[i, :, val_scalar:] = gpr_reshaped2[i, :, :-val_scalar]
-        for align_depth3 in range(0, 256):
-            gpr_aligned[i, align_depth3, :val_scalar] = (gpr_aligned[i, align_depth3, :val_scalar] * 0.1
-                                                        + int(np.mean(gpr_aligned[i, align_depth3, val_scalar:])))
+
+        shift_px = int(offset / distance_interval)
+        gpr_aligned[ch_idx, :, shift_px:] = gpr_data[ch_idx, :, :-shift_px]
+
+        # 앞쪽 빈 공간은 평균값으로 채움 (방향성 보존)
+        mean_values = np.mean(gpr_aligned[ch_idx, :, shift_px:], axis=1, keepdims=True)
+        gpr_aligned[ch_idx, :, :shift_px] = mean_values
 
     return gpr_aligned
