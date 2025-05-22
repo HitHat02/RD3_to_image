@@ -14,5 +14,10 @@
 
 ## 파일 실행 코드
 ```bash
-python main.py
+python main.py \
+  --path "C:\\Users\\HYH\\Desktop\\AI_분석\\01 RAWDATA\\SBR_013\\00\\" \
+  --filename "SBR_013.rd3" \
+  --start_idx 100 \
+  --length 200 \
+  --save_path "C:\\Users\\HYH\\Desktop\\AI_분석\\01 RAWDATA\\SBR_013\\00"
 ```
