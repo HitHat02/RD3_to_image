@@ -10,7 +10,7 @@ def gpr_processing(rd3):
 
 path = "C:\\Users\\admin\\Desktop\\SBR_013\\00"
 filename = "SBR_013.rd3"
-start_m = 0.2
+start_m = 0.1
 length_m = 0.4
 save_path = "C:\\Users\\admin\\Desktop\\SBR_013\\00"
 
