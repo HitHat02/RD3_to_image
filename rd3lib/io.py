@@ -89,7 +89,7 @@ def extractionRad(path, filename):
 
     return chOffsets, distance_interval, ch
 
-def image_save(npdata, savepath):
+def image_save(npdata, savepath, save_point, image_size):
     """
     RD3 3차원 데이터를 슬라이스하여 정규화 및 업스케일 후,
     각 축에 대한 특정 인덱스 슬라이스 이미지를 저장합니다.
@@ -102,8 +102,7 @@ def image_save(npdata, savepath):
     :type npdata: numpy.ndarray
     :param savepath: 이미지 저장 경로 (폴더)
     :type savepath: str
-    :return: 없음 (이미지 파일을 지정된 경로에 저장)
-    :rtype: None
+
     """
     # 데이터가 3차원인지 확인
     if npdata.ndim != 3:
@@ -114,20 +113,20 @@ def image_save(npdata, savepath):
     dpi = 100
 
     slice_configs = [
-        ("slice_횡단면_axis2", lambda i: npdata[:, :, i].T, npdata.shape[2], (3, 6)),
-        ("slice_종단면_axis0", lambda i: npdata[i, :, :], npdata.shape[0], (8, 5)),
-        ("slice_평단면_axis1", lambda i: npdata[:, i, :], npdata.shape[1], (8, 3)),
+        ("slice_종단면_axis0",save_point[0], lambda i: npdata[i, :, :], npdata.shape[0], image_size[0]),
+        ("slice_평단면_axis1",save_point[1], lambda i: npdata[:, i, :], npdata.shape[1], image_size[1]),
+        ("slice_횡단면_axis2",save_point[2], lambda i: npdata[:, :, i].T, npdata.shape[2], image_size[2]),
     ]
 
-    for name, slicer, max_index, figsize in slice_configs:
-        slice_data = slicer(i)
+    for name, savepoint, slicer, max_index, figsize in slice_configs:
+        slice_data = slicer(savepoint)
         norm_img = normalize_minmax(slice_data, vmin=-3000, vmax=3000)
         upscaled = upscale_image(norm_img, scale=4)
 
         fig = plt.figure(figsize=figsize, dpi=dpi)
         plt.imshow(upscaled, cmap="gray", aspect='auto')
         plt.axis('off')
-        fig.savefig(os.path.join(savepath, f"{name}_{i:03}.png"), bbox_inches='tight', pad_inches=0)
+        fig.savefig(os.path.join(savepath, f"{name}_{savepoint:03}.png"), bbox_inches='tight', pad_inches=0)
         plt.close(fig)
 
     print(f"슬라이스 이미지가 '{savepath}' 디렉토리에 저장되었습니다.")
