@@ -20,5 +20,5 @@
 
 ## 파일 실행 코드
 ```bash
-python main.py --path "C:\\Users\\HYH\\Desktop\\AI_분석\\01 RAWDATA\\SBR_013\\00\\" --filename "SBR_013.rd3" --start_idx 100 --length 200 --save_path "C:\\Users\\HYH\\Desktop\\AI_분석\\01 RAWDATA\\SBR_013\\00" --save_point "[22, 20, 130]" --image_size "[(8.0, 5.0), (8.0, 3.0), (3.0, 6.0)]"
+python main.py --path "C:\\Users\\HYH\\Desktop\\AI_분석\\01 RAWDATA\\SBR_013\\00\\" --filename "SBR_013.rd3" --start_m 0.1 --length_m 14.6 --save_path "C:\\Users\\HYH\\Desktop\\AI_분석\\01 RAWDATA\\SBR_013\\00" --save_point "[22, 20, 130]" --image_size "[(8.0, 5.0), (8.0, 3.0), (3.0, 6.0)]"
 ```

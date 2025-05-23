@@ -31,7 +31,9 @@ def cutRd3(rd3, start_m, length_m, path, filename):
     :param rd3: 원본 3차원 GPR 데이터 (채널, 깊이, 트레이스 수)
     :type rd3: numpy.ndarray
     :param start_m:시작 거리(미터 단위)
+    :type start_m: float
     :param length_m: 자르고 싶은 거리 길이(미터 단위)
+    :type length_m: float
     :return: 잘라낸 범위의 3차원 GPR 데이터
     :rtype: numpy.ndarray
     """
