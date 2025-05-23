@@ -24,7 +24,7 @@ def reshapeRd3(raw_rd3):
 
     return gpr_reshaped
 
-def cutRd3(rd3, start_m, length_m,path, filename):
+def cutRd3(rd3, start_m, length_m, path, filename):
     """
     3차원 RD3 GPR 데이터를 지정된 시작 인덱스와 길이에 따라 슬라이싱합니다.
 
@@ -37,9 +37,12 @@ def cutRd3(rd3, start_m, length_m,path, filename):
     """
     _, distance_interval, _ = extractionRad(path, filename)
 
-    start_idx = int(start_m / distance_interval)
-    length = int(length_m / distance_interval)
+    start_idx = round(start_m / distance_interval)
+    length = round(length_m / distance_interval)
     end_idx = min(start_idx + length, rd3.shape[2])
+
+    print(f"[거리 {start_m}m ~ {start_m + length_m}m] → 인덱스 {start_idx} ~ {start_idx + length}")
+
     return rd3[:, :, start_idx:end_idx]
 
 def detect_min_max(signal, neg_thresh=-1000, pos_thresh=1000):
