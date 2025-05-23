@@ -32,14 +32,14 @@ def main():
     save_point = ast.literal_eval(args.save_point)
     image_size = ast.literal_eval(args.image_size)
 
+    start_m = 0.1
+    length_m = 0.4
+
     # 파일 읽기
     rd3 = readRd3(args.path, args.filename)
 
     # 전처리
-    rd3 = gpr_processing(args.path, args.filename, rd3)
-
-    # 이미지 자르기
-    rd3 = cutRd3(rd3, args.start_idx, args.length)
+    rd3 = cutRd3(rd3, start_m, length_m, args.path, args.filename)
 
     # 이미지 저장
     image_save(rd3, args.save_path, save_point, image_size)
