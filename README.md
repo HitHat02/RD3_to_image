@@ -22,3 +22,10 @@
 ```bash
 python main.py --path "C:\\Users\\HYH\\Desktop\\AI_분석\\01 RAWDATA\\SBR_013\\00\\" --filename "SBR_013.rd3" --start_m 0.1 --length_m 14.6 --save_path "C:\\Users\\HYH\\Desktop\\AI_분석\\01 RAWDATA\\SBR_013\\00" --save_point "[22, 20, 130]" --image_size "[(8.0, 5.0), (8.0, 3.0), (3.0, 6.0)]"
 ```
+
+## image200.py의 설명
+### 사용법
+- 파일안에 run()함수를 실행하면 프로세스 대로 진행됨
+- 같은 프로젝트 디렉토리에 'results', 'uploads' 가 있어야 함.
+- 'uploads' 디렉토리에는 rd3, rad, rst 파일이 존재해야 함.
+- 'results' 디렉토리에는 image200.py의 함수의 로직에 따라서 결과물을 저장함.

@@ -47,6 +47,13 @@ def cutRd3(rd3, start_m, length_m, path, filename):
 
     return rd3[:, :, start_idx:end_idx]
 
+def cut_200m(rd3, chunk_list):
+    rd3list = []
+    for n in range(len(chunk_list)):
+        start, end = chunk_list[n]
+        rd3list.append(rd3[:, :, start:end])
+    return rd3list
+
 def detect_min_max(signal, neg_thresh=-1000, pos_thresh=1000):
     """
     하나의 채널 평균 신호에서 최소/최대값 위치 반환
@@ -61,7 +68,7 @@ def detect_min_max(signal, neg_thresh=-1000, pos_thresh=1000):
             break
     return min_idx, max_idx
 
-def alignSignal(path, filename, gpr_data, depth=256):
+def alignSignal(gpr_data, ch, depth=256):
     """
     GPR 데이터를 채널 간 정렬 및 정규화하는 함수
 
@@ -71,7 +78,6 @@ def alignSignal(path, filename, gpr_data, depth=256):
 
     :return gpr_normalized: 채널 간 정규화가 적용된 GPR 데이터 3차원 배열 (np.ndarray)
     """
-    _, _, ch = extractionRad(path, filename)
     mins, maxs = [], []
 
     # 1단계: 채널별 ground 평균 계산 후 min/max 탐지
@@ -112,7 +118,7 @@ def detect_ground_index(signal, neg_thresh=-1000, pos_thresh=1000):
                 return round((i + (min_idx + max_idx) / 2) / 2)
     return 10  # fallback index
 
-def alignGround(path, filename, gpr_data, depth=256, pad=10):
+def alignGround(gpr_data, ch, depth=256, pad=10):
     """
     각 채널마다 지표면의 반사 위치가 서로 다를 수 있기 때문에,
     GPR 데이터에서 지표면(ground)을 기준으로 정렬한 결과를 반환해주는 함수
@@ -123,7 +129,6 @@ def alignGround(path, filename, gpr_data, depth=256, pad=10):
 
     :return gpr_reshaped2: 지표면을 기준으로 정렬된 GPR 데이터 (np.ndarray), shape = (채널 수, 256, 거리 수)
     """
-    _, _, ch = extractionRad(path, filename)
     ground_aligned = np.zeros_like(gpr_data)
 
     for i in range(ch):
@@ -139,7 +144,7 @@ def alignGround(path, filename, gpr_data, depth=256, pad=10):
 
     return ground_aligned
 
-def alignChannel(path, filename, gpr_data, depth=256):
+def alignChannel(gpr_data, ch_offsets, distance_interval):
     """
     0.044, 2.58 으로 거리가 차이나는 채널 간 위치 오차 보정해주는 함수
 
@@ -149,7 +154,6 @@ def alignChannel(path, filename, gpr_data, depth=256):
 
     return gpr_reshaped2: 채널 간 수평 정렬이 적용된 GPR 데이터 (np.ndarray), shape = (채널 수, 256, 거리 수)
     """
-    ch_offsets, distance_interval, _ = extractionRad(path, filename)
     offsets = np.array(ch_offsets) - np.min(ch_offsets)  # 가장 가까운 채널을 기준으로 정렬
     gpr_aligned = np.copy(gpr_data)
 
