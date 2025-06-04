@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>RD3 처리</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #e0f7fa, #f2f2f2);
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 400px;
+        }
+
+        h2 {
+            margin-bottom: 24px;
+            color: #00796b;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            background-color: #eceff1;
+            border: none;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        input[type="submit"], .download-button {
+            background-color: #00acc1;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.2s;
+        }
+
+        input[type="submit"]:hover,
+        .download-button:hover {
+            background-color: #00838f;
+        }
+
+        .download-group {
+            margin-top: 20px;
+        }
+
+        .download-button {
+            display: block;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>RD3 파일 업로드 및 변환</h2>
+
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <input type="file" name="files" multiple required><br>
+            <input type="submit" value="업로드">
+        </form>
+
+        {% if ready %}
+            <h3>이미지 생성 완료</h3>
+            <a href="/download" download>
+                <button class="download-button">ZIP으로 이미지 다운로드</button>
+            </a>
+
+            <!-- 초기화 버튼 -->
+            <form action="/clear" method="post" style="display:inline;">
+                <button type="submit" style="margin-left: 10px;">처음으로 돌아가기</button>
+            </form>
+
+            <div class="image-preview" style="margin-top: 30px;">
+                <h4>미리보기</h4>
+                {% for img in images %}
+                    <img src="/results/{{ img | urlencode }}" alt="{{ img }}" width="300">
+                {% endfor %}
+            </div> 
+        {% endif %}
+
+    </div>
+</body>
+</html>

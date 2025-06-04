@@ -86,6 +86,7 @@ $RECYCLE.BIN/
 # Virtual Environment
 .venv
 venv
+myenv
 
 .idea
 

@@ -12,6 +12,7 @@ from image200 import run
 app = FastAPI()
 
 UPLOAD_DIR = "./uploads"
+RESULT_DIR = "./results"
 
 app.mount("/results", StaticFiles(directory="results"), name="results")
 templates = Jinja2Templates(directory="templates")
@@ -20,11 +21,8 @@ process_done = False
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    '''
-    홈화면 png이미지를 표시하도록 할려고 했지만 잘 안됨
-    '''
     png_files = get_png_list()
-    return templates.TemplateResponse("index.html", {
+    return templates.TemplateResponse("Jinja_front.html", {
         "request": request,
         "process_done": process_done,
         "png_files": png_files
@@ -66,13 +64,23 @@ async def run_process(request: Request):
         for name in files:
             if name.endswith(".rd3"):
                 filename = str(name[:-4])
+
+    #  # 필수 파일 체크
+    # if not all(ext in [f.split('.')[-1] for f in filenames] for ext in ["rd3", "rad", "rst"]):
+    #     return templates.TemplateResponse("Jinja_front.html", {
+    #         "request": request,
+    #         "ready": False,
+    #         "error": "rd3, rad, rst 파일이 모두 필요합니다."
+    #     })
+
     run()
     create_zip_from_results(output_zip_path=f"results/{filename}.zip")
-    process_done = True
-    return templates.TemplateResponse("index.html", {
+
+    result_images = [f for f in os.listdir(RESULT_DIR) if f.endswith(".png")]
+    return templates.TemplateResponse("Jinja_front.html", {
         "request": request,
-        "message": "run() 실행 완료",
-        "process_done": True
+        "ready": True,
+        "images": result_images,
     })
 
 @app.get("/download")
