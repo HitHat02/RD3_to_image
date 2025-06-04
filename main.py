@@ -22,36 +22,67 @@ process_done = False
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    png_files = get_png_list()
+
     return templates.TemplateResponse("Jinja_front.html", {
         "request": request,
         "process_done": process_done,
-        "png_files": png_files
+
     })
 
 
 @app.post("/upload")
 async def upload(request: Request, files: List[UploadFile] = File(...)):
-    
+    clear_directories()
     for file in files:
+        files = os.listdir(UPLOAD_DIR)
+        files_files = [f for f in files if f.endswith('.rd3') or f.endswith('.rad') or f.endswith('.rst')]
         file_path = os.path.join(UPLOAD_DIR, file.filename)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
+    # 허용되지 않은 확장자 검사
+    filenames = os.listdir(UPLOAD_DIR)
+    required_exts = {"rd3", "rad", "rst"}
+    uploaded_exts = set([f.split('.')[-1].lower() for f in filenames])
+    disallowed_exts = uploaded_exts - required_exts
+    if disallowed_exts:
+        return templates.TemplateResponse("Jinja_front.html", {
+            "request": request,
+            "ready": False,
+            "error": "rd3, rad, rst 파일만 사용할 수 있습니다.",
+            "images": []
+        })
+
     global process_done
     process_done = False
 
-    return RedirectResponse(url="/uploaded", status_code=303)
-
-@app.get("/uploaded", response_class=HTMLResponse)
-def uploaded_view(request: Request):
-    png_files = get_png_list()
     return templates.TemplateResponse("Jinja_front.html", {
         "request": request,
-        "uploaded": True,
+        "upload": True,
         "ready": False,
-        "images": png_files
     })
+
+# @app.get("/uploaded", response_class=HTMLResponse)
+# def uploaded_view(request: Request):
+#      # 허용되지 않은 확장자 검사
+#     filenames = os.listdir(UPLOAD_DIR)
+#     required_exts = {"rd3", "rad", "rst"}
+#     uploaded_exts = set([f.split('.')[-1].lower() for f in filenames])
+#     disallowed_exts = uploaded_exts - required_exts
+#     if disallowed_exts:
+#         return templates.TemplateResponse("Jinja_front.html", {
+#             "request": request,
+#             "ready": False,
+#             "error": "rd3, rad, rst 파일만 사용할 수 있습니다.",
+#             "images": []
+#         })
+    
+
+#     return templates.TemplateResponse("Jinja_front.html", {
+#         "request": request,
+#         "uploaded": True,
+#         "ready": False,
+#     })
 
 @app.post("/run-process")
 async def process(request: Request):
@@ -59,6 +90,17 @@ async def process(request: Request):
     required_exts = {"rd3", "rad", "rst"}
     uploaded_exts = set([f.split('.')[-1].lower() for f in filenames])
 
+    #  # 허용되지 않은 확장자 검사
+    # disallowed_exts = uploaded_exts - required_exts
+    # if disallowed_exts:
+    #     return templates.TemplateResponse("Jinja_front.html", {
+    #         "request": request,
+    #         "ready": False,
+    #         "error": "rd3, rad, rst 파일만 사용할 수 있습니다.",
+    #         "images": []
+    #     })
+
+    # 정상 실행 조건
     if not required_exts.issubset(uploaded_exts):
         return templates.TemplateResponse("Jinja_front.html", {
             "request": request,
@@ -93,7 +135,6 @@ async def clear_and_redirect():
     process_done = False  # 상태 초기화
     clear_directories()
     return RedirectResponse(url="/", status_code=303)
-
 
 def get_png_list():
     result_dir = "./results"
