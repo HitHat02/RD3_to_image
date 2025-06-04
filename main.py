@@ -7,7 +7,9 @@ import shutil
 import os
 from image200 import run
 from zipfile import ZipFile
-
+import os
+import re
+from collections import defaultdict
 
 
 app = FastAPI()
@@ -23,6 +25,7 @@ process_done = False
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
+
     return templates.TemplateResponse("Jinja_front.html", {
         "request": request,
         "process_done": process_done
@@ -63,6 +66,7 @@ async def upload(request: Request, files: List[UploadFile] = File(...)):
         "ready": False,
     })
 
+
 @app.post("/run-process")
 async def process(request: Request):
     '''
@@ -76,7 +80,8 @@ async def process(request: Request):
     required_exts = {"rd3", "rad", "rst"}
     uploaded_exts = set([f.split('.')[-1].lower() for f in filenames])
 
-    # 정상 실행 조건
+
+    # 정상 실행 조건(rd3, rad, rst 파일이 모두 존재해야 함)
     if not required_exts.issubset(uploaded_exts):
         return templates.TemplateResponse("Jinja_front.html", {
             "request": request,
@@ -100,6 +105,7 @@ async def process(request: Request):
         "images": result_images
     })
 
+
 @app.get("/download")
 async def download_result():
     '''
@@ -119,10 +125,68 @@ async def clear_and_redirect():
     clear_directories()
     return RedirectResponse(url="/", status_code=303)
 
-
 def get_png_list():
     result_dir = "./results"
-    return [f for f in os.listdir(result_dir) if f.endswith(".png")]
+    files = [f for f in os.listdir(result_dir) if f.endswith(".png")]
+
+    pattern = re.compile(r"_(\d+)\.png$")
+    grouped = defaultdict(list)
+
+    for file in files:
+        match = pattern.search(file)
+        if match:
+            index = int(match.group(1))
+            grouped[index].append(file)
+
+    def sort_key(name):
+        # 도로, 평단, 종단 순서가 중요
+        if "도로" in name:
+            return 0
+        elif "평단" in name:
+            return 1
+        elif "종단" in name:
+            return 2
+        # 횡단은 이 리스트에 포함시키지 않습니다. (별도 처리)
+        else:
+            return 99 # 이외의 파일은 마지막으로 보냅니다.
+
+    final_sorted_groups = []
+
+    for index in sorted(grouped.keys()):
+        current_group_files = sorted(grouped[index], key=sort_key)
+
+        main_images = [] # 도로, 평단, 종단
+        cross_section_image = None # 횡단면
+
+        # 파일들을 분류합니다.
+        for file_name in current_group_files:
+            if "횡단" in file_name:
+                cross_section_image = file_name
+            elif "도로" in file_name or "평단" in file_name or "종단" in file_name:
+                main_images.append(file_name)
+
+        # main_images를 다시 한번 도로, 평단, 종단 순서로 정렬 (혹시 위에서 제대로 안 되었을 경우 대비)
+        # 이 부분은 sort_key가 잘 작동한다면 불필요할 수 있습니다.
+        # 명시적인 순서 유지를 위해 재정렬하는 로직을 추가할 수도 있습니다.
+        ordered_main_images = [None] * 3 # 도로, 평단, 종단 슬롯
+        for file_name in main_images:
+            if "도로" in file_name:
+                ordered_main_images[0] = file_name
+            elif "평단" in file_name:
+                ordered_main_images[1] = file_name
+            elif "종단" in file_name:
+                ordered_main_images[2] = file_name
+
+        final_sorted_groups.append({
+            'index': index, # 그룹 인덱스를 함께 넘겨주는 것이 좋습니다.
+            'main_images': ordered_main_images, # 도로, 평단, 종단 이미지
+            'cross_section_image': cross_section_image # 횡단면 이미지
+        })
+
+    print("이미지 정렬 및 그룹화 결과:", final_sorted_groups)
+    return final_sorted_groups
+
+
 
 def create_zip_from_results(output_zip_path: str, result_dir: str = "./results"):
     '''
