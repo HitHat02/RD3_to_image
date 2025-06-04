@@ -1,6 +1,6 @@
 from rd3lib import image_save, road_image_save
-from rd3lib import extractionRad, cut_200m, chunk_range
-from rd3lib import rd3_process
+from rd3lib import extractionRad, cut_200m
+from rd3lib.utils import rd3_process, chunk_range
 import os
 from road import roadDrawing
 

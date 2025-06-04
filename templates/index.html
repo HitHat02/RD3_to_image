@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>파일 업로드 및 실행</title>
+</head>
+<body>
+    <h1>파일 업로드 및 run() 실행</h1>
+
+    <form action="/upload" enctype="multipart/form-data" method="post">
+        <input type="file" name="files" multiple>
+        <button type="submit">업로드</button>
+    </form>
+
+    {% if message %}
+        <p>{{ message }}</p>
+    {% endif %}
+
+    {% if show_run %}
+        <form action="/run-process" method="post">
+            <button type="submit">이미지생성</button>
+        </form>
+    {% endif %}
+
+    {% if process_done %}
+        <h2>결과 파일</h2>
+        <ul>
+            {% for file in png_files %}
+                <li>
+                    {{ file }}
+                    <a href="/results/{{ file }}" download>
+                        <button>다운로드</button>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+        <!-- 전체 ZIP 다운로드 -->
+        <a href="/download"><button>ZIP으로 이미지 다운로드</button></a>
+
+        <!-- 초기화 버튼 -->
+        <form action="/clear" method="post" style="display:inline;">
+            <button type="submit" style="margin-left: 10px;">처음으로 돌아가기</button>
+        </form>
+    {% endif %}
+</body>
+</html>

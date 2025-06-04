@@ -3,7 +3,6 @@ rd3, rad 파일 읽기 등 I/O 관련 함수
 '''
 import numpy as np
 import os
-import os
 import matplotlib.pyplot as plt
 from rd3lib.utils import normalize_minmax, upscale_image
 
@@ -92,7 +91,7 @@ def extractionRad(path, filename):
     return chOffsets, distance_interval, ch
 
 
-def image_save(npdata, filename, number, depth):
+def image_save(npdata, filename, number, depth=30):
     """
     RD3 3차원 데이터를 슬라이스하여 정규화 및 업스케일 후,
     각 축에 대한 특정 인덱스 슬라이스 이미지를 저장합니다.

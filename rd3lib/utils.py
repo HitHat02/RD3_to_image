@@ -1,8 +1,5 @@
 import numpy as np
 from PIL import Image
-from rd3lib import alignSignal, alignGround, alignChannel
-from rd3lib import readRd3, extractionRad
-from rd3lib import reshapeRd3, apply_filter
 
 def upscale_image(data_uint8, scale=4):
     """
@@ -53,6 +50,7 @@ def chunk_range(datalength, distance_interval):
     return chunk_list
 
 def rd3_process(DIRNAME, BASENAME):
+    from rd3lib import readRd3, extractionRad, reshapeRd3, apply_filter, alignSignal, alignGround, alignChannel
     chOffsets, distance_interval, ch = extractionRad(DIRNAME, BASENAME)
     rd3 = readRd3(DIRNAME, BASENAME)
     rd3 = reshapeRd3(rd3)
