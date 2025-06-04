@@ -30,7 +30,7 @@ def run():
     roaddrawing = roadDrawing(DIRNAME, BASENAME)
     file_langth = rd3.shape[2]
     img = roaddrawing.makeImg(file_langth)
-    road_image_save(img, BASENAME, [[0, 1772]])
+    road_image_save(img, BASENAME, chunk_list)
 
 
 
