@@ -42,7 +42,7 @@ async def upload(request: Request, files: List[UploadFile] = File(...)):
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-    return templates.TemplateResponse("index.html", {
+    return templates.TemplateResponse("Jinja_front.html", {
         "request": request,
         "message": f"{len(files)}개 파일 업로드 완료",
         "show_run": True
