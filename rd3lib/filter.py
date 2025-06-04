@@ -22,7 +22,7 @@ def apply_filter(npy_file):
     :return: 필터가 적용된 RD3 numpy 배열
     :rtype: numpy.ndarray
     """
-    filter_df = pd.read_csv('.\\rd3lib\\filterCollect.csv')
+    filter_df = pd.read_csv('./rd3lib/filterCollect.csv')
 
     filter_ = filter_worker(npy_file, filter_df)
     RD3_data = filter_.filterRun()

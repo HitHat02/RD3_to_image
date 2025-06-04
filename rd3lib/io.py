@@ -106,7 +106,7 @@ def image_save(npdata, filename, number, depth=30):
     :type savepath: str
 
     """
-    savepath = ".\\results"
+    savepath = "./results"
     name = filename.split('.')[0]
     # 데이터가 3차원인지 확인
     if npdata.ndim != 3:
@@ -140,4 +140,4 @@ def road_image_save(road_image, BASENAME, chunk_list):
         start, end = chunk_list[n]
         road_image.crop((start, 0, end, 80)).save(f"results/{name}_도로면_{n}.png", format='PNG')
 
-    print(f"이미지 저장 완료: .\\results\\{name}_도로면_{n}.png")
+    print(f"이미지 저장 완료: ./results/{name}_도로면_{n}.png")
