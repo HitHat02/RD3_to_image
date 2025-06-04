@@ -2,7 +2,7 @@
 
 가상환경을 구성하고 main.py에 파라미터를 작성 작성 후 실행
 
-## main.py 코드에 경로 및 파일명을 기입해야함.
+## main_old.py 코드에 경로 및 파일명을 기입해야함.
 ### 파일 읽기 파라미터
 - path : 파일이 있는 디렉토리 경로
 - filename : 파일 이름(파일 확장자까지 포함)
@@ -29,3 +29,6 @@ python main_old.py --path "C:\\Users\\HYH\\Desktop\\AI_분석\\01 RAWDATA\\SBR_0
 - 같은 프로젝트 디렉토리에 'results', 'uploads' 가 있어야 함.
 - 'uploads' 디렉토리에는 rd3, rad, rst 파일이 존재해야 함.
 - 'results' 디렉토리에는 image200.py의 함수의 로직에 따라서 결과물을 저장함.
+
+## main.py로 이용한 인터넷 웹 앱 개발
+- uvicorn main:app --reload --host 0.0.0.0 --port 8000로 실행하면 됨
