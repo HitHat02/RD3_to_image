@@ -76,7 +76,14 @@
             <input type="submit" value="업로드">
         </form>
 
-        {% if uploaded and not ready %}
+        {% if error %}
+            <div style="color: red; margin-bottom: 20px; font-weight: bold;">
+                {{ error }}
+            </div>
+        {% endif %}
+
+
+        {% if upload and not ready %}
             <form action="/run-process" method="post">
                 <button class="download-button" type="submit">이미지 생성하기</button>
             </form>

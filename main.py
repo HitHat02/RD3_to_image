@@ -32,28 +32,37 @@ def home(request: Request):
 @app.post("/upload")
 async def upload(request: Request, files: List[UploadFile] = File(...)):
     '''
-        List[UploadFile] 형식으로 받은 파일을을
-        UPLOAD_DIR path에 파일을 저장하는 형식
-        '''
+    List[UploadFile] 형식으로 받은 파일을을
+    UPLOAD_DIR path에 파일을 저장하는 형식
+    '''
+    clear_directories()
     for file in files:
+        files = os.listdir(UPLOAD_DIR)
+        files_files = [f for f in files if f.endswith('.rd3') or f.endswith('.rad') or f.endswith('.rst')]
         file_path = os.path.join(UPLOAD_DIR, file.filename)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-    return templates.TemplateResponse("Jinja_front.html", {
-        "request": request,
-        "message": f"{len(files)}개 파일 업로드 완료",
-        "show_run": True
-    })
+    # 허용되지 않은 확장자 검사
+    filenames = os.listdir(UPLOAD_DIR)
+    required_exts = {"rd3", "rad", "rst"}
+    uploaded_exts = set([f.split('.')[-1].lower() for f in filenames])
+    disallowed_exts = uploaded_exts - required_exts
+    if disallowed_exts:
+        return templates.TemplateResponse("Jinja_front.html", {
+            "request": request,
+            "ready": False,
+            "error": "rd3, rad, rst 파일만 사용할 수 있습니다.",
+            "images": []
+        })
 
-@app.get("/uploaded", response_class=HTMLResponse)
-def uploaded_view(request: Request):
-    png_files = get_png_list()
+    global process_done
+    process_done = False
+
     return templates.TemplateResponse("Jinja_front.html", {
         "request": request,
-        "uploaded": True,
+        "upload": True,
         "ready": False,
-        "images": png_files
     })
 
 @app.post("/run-process")
@@ -69,6 +78,7 @@ async def process(request: Request):
     required_exts = {"rd3", "rad", "rst"}
     uploaded_exts = set([f.split('.')[-1].lower() for f in filenames])
 
+    # 정상 실행 조건
     if not required_exts.issubset(uploaded_exts):
         return templates.TemplateResponse("Jinja_front.html", {
             "request": request,
@@ -91,6 +101,7 @@ async def process(request: Request):
         "ready": True,
         "images": result_images
     })
+
 
 @app.get("/download")
 async def download_result():
