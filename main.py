@@ -48,7 +48,7 @@ async def run_process(request: Request):
     global process_done
     os.makedirs("results", exist_ok=True)
     global filename
-    for root, dirs, files in os.walk(".\\uploads"):
+    for root, dirs, files in os.walk("./uploads"):
         for name in files:
             if name.endswith(".rd3"):
                 filename = str(name[:-4])
