@@ -73,21 +73,26 @@
 
         <form action="/upload" method="post" enctype="multipart/form-data">
             <input type="file" name="files" multiple required><br>
-            <input type="submit" value="파일 만들기">
+            <input type="submit" value="업로드">
         </form>
 
         {% if ready %}
             <h3>이미지 생성 완료</h3>
-            <a href="/download/{{ zipfile }}" download>
-                <button class="download-button">{{ zipfile }} 다운로드</button>
+            <a href="/download" download>
+                <button class="download-button">ZIP으로 이미지 다운로드</button>
             </a>
+
+            <!-- 초기화 버튼 -->
+            <form action="/clear" method="post" style="display:inline;">
+                <button type="submit" style="margin-left: 10px;">처음으로 돌아가기</button>
+            </form>
 
             <div class="image-preview" style="margin-top: 30px;">
                 <h4>미리보기</h4>
                 {% for img in images %}
                     <img src="/results/{{ img | urlencode }}" alt="{{ img }}" width="300">
                 {% endfor %}
-            </div>
+            </div> 
         {% endif %}
 
     </div>
