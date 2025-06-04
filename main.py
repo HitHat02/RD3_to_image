@@ -37,8 +37,6 @@ async def upload(request: Request, files: List[UploadFile] = File(...)):
     '''
     clear_directories()
     for file in files:
-        files = os.listdir(UPLOAD_DIR)
-        files_files = [f for f in files if f.endswith('.rd3') or f.endswith('.rad') or f.endswith('.rst')]
         file_path = os.path.join(UPLOAD_DIR, file.filename)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
@@ -101,7 +99,6 @@ async def process(request: Request):
         "ready": True,
         "images": result_images
     })
-
 
 @app.get("/download")
 async def download_result():
