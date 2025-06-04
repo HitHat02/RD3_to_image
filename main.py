@@ -106,23 +106,70 @@ async def clear_and_redirect():
     clear_directories()
     return RedirectResponse(url="/", status_code=303)
 
+import os
+import re
+from collections import defaultdict
+
 def get_png_list():
     result_dir = "./results"
     files = [f for f in os.listdir(result_dir) if f.endswith(".png")]
 
-    def sort_key(name):
-        if "도로면" in name:
-            return 0
-        elif "평단면" in name:
-            return 1
-        elif "종단면" in name:
-            return 2
-        else:
-            return 3  
+    pattern = re.compile(r"_(\d+)\.png$")
+    grouped = defaultdict(list)
 
-    sorted_files = sorted(files, key=sort_key)
-    print(" 이미지 정렬 결과:", sorted_files) 
-    return sorted_files
+    for file in files:
+        match = pattern.search(file)
+        if match:
+            index = int(match.group(1))
+            grouped[index].append(file)
+
+    def sort_key(name):
+        # 도로, 평단, 종단 순서가 중요
+        if "도로" in name:
+            return 0
+        elif "평단" in name:
+            return 1
+        elif "종단" in name:
+            return 2
+        # 횡단은 이 리스트에 포함시키지 않습니다. (별도 처리)
+        else:
+            return 99 # 이외의 파일은 마지막으로 보냅니다.
+
+    final_sorted_groups = []
+
+    for index in sorted(grouped.keys()):
+        current_group_files = sorted(grouped[index], key=sort_key)
+        
+        main_images = [] # 도로, 평단, 종단
+        cross_section_image = None # 횡단면
+
+        # 파일들을 분류합니다.
+        for file_name in current_group_files:
+            if "횡단" in file_name:
+                cross_section_image = file_name
+            elif "도로" in file_name or "평단" in file_name or "종단" in file_name:
+                main_images.append(file_name)
+        
+        # main_images를 다시 한번 도로, 평단, 종단 순서로 정렬 (혹시 위에서 제대로 안 되었을 경우 대비)
+        # 이 부분은 sort_key가 잘 작동한다면 불필요할 수 있습니다.
+        # 명시적인 순서 유지를 위해 재정렬하는 로직을 추가할 수도 있습니다.
+        ordered_main_images = [None] * 3 # 도로, 평단, 종단 슬롯
+        for file_name in main_images:
+            if "도로" in file_name:
+                ordered_main_images[0] = file_name
+            elif "평단" in file_name:
+                ordered_main_images[1] = file_name
+            elif "종단" in file_name:
+                ordered_main_images[2] = file_name
+
+        final_sorted_groups.append({
+            'index': index, # 그룹 인덱스를 함께 넘겨주는 것이 좋습니다.
+            'main_images': ordered_main_images, # 도로, 평단, 종단 이미지
+            'cross_section_image': cross_section_image # 횡단면 이미지
+        })
+
+    print("이미지 정렬 및 그룹화 결과:", final_sorted_groups)
+    return final_sorted_groups
     
 
 
