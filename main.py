@@ -3,9 +3,10 @@ from fastapi import FastAPI, File, UploadFile, Request
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-import shutil, os
-
+import shutil
+import os
 from image200 import run
+from zipfile import ZipFile
 
 
 
@@ -22,11 +23,9 @@ process_done = False
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    png_files = get_png_list()
     return templates.TemplateResponse("Jinja_front.html", {
         "request": request,
-        "process_done": process_done,
-        "png_files": png_files
+        "process_done": process_done
     })
 
 
@@ -47,20 +46,6 @@ async def upload(request: Request, files: List[UploadFile] = File(...)):
         "show_run": True
     })
 
-@app.post("/run-process")
-async def run_process(request: Request):
-    '''
-    from image200 import run을 하여
-    uploads 디렉토리에 있는 파일들을 이미지로 만들어서
-    results 디렉토리에 저장함
-    그 이후 create_zip_from_results 함수를 이용하여 .PNG 이미지들을 .zip형식으로 수정
-    파일이름을 읽어 전역변수 filename에 넣고 추후 저장할때 파일명을 자동으로 지정해줌
-    '''
-    global process_done
-    process_done = False
-
-    return RedirectResponse(url="/uploaded", status_code=303)
-
 @app.get("/uploaded", response_class=HTMLResponse)
 def uploaded_view(request: Request):
     png_files = get_png_list()
@@ -73,6 +58,13 @@ def uploaded_view(request: Request):
 
 @app.post("/run-process")
 async def process(request: Request):
+    '''
+    from image200 import run을 하여
+    uploads 디렉토리에 있는 파일들을 이미지로 만들어서
+    results 디렉토리에 저장함
+    그 이후 create_zip_from_results 함수를 이용하여 .PNG 이미지들을 .zip형식으로 수정
+    파일이름을 읽어 전역변수 filename에 넣고 추후 저장할때 파일명을 자동으로 지정해줌
+    '''
     filenames = os.listdir(UPLOAD_DIR)
     required_exts = {"rd3", "rad", "rst"}
     uploaded_exts = set([f.split('.')[-1].lower() for f in filenames])
@@ -123,8 +115,6 @@ async def clear_and_redirect():
 def get_png_list():
     result_dir = "./results"
     return [f for f in os.listdir(result_dir) if f.endswith(".png")]
-
-from zipfile import ZipFile
 
 def create_zip_from_results(output_zip_path: str, result_dir: str = "./results"):
     '''
