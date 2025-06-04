@@ -13,7 +13,8 @@ app = FastAPI()
 
 UPLOAD_DIR = "./uploads"
 RESULT_DIR = "./results"
-
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(RESULT_DIR, exist_ok=True)
 app.mount("/results", StaticFiles(directory="results"), name="results")
 templates = Jinja2Templates(directory="templates")
 
@@ -31,38 +32,56 @@ def home(request: Request):
 
 @app.post("/upload")
 async def upload(request: Request, files: List[UploadFile] = File(...)):
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-
+    
     for file in files:
         file_path = os.path.join(UPLOAD_DIR, file.filename)
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
     global process_done
-    os.makedirs("results", exist_ok=True)
-    global filename
-    for root, dirs, files in os.walk("./uploads"):
-        for name in files:
-            if name.endswith(".rd3"):
-                filename = str(name[:-4])
+    process_done = False
 
-    #  # 필수 파일 체크
-    # if not all(ext in [f.split('.')[-1] for f in filenames] for ext in ["rd3", "rad", "rst"]):
-    #     return templates.TemplateResponse("Jinja_front.html", {
-    #         "request": request,
-    #         "ready": False,
-    #         "error": "rd3, rad, rst 파일이 모두 필요합니다."
-    #     })
-    
+    return RedirectResponse(url="/uploaded", status_code=303)
+
+@app.get("/uploaded", response_class=HTMLResponse)
+def uploaded_view(request: Request):
+    png_files = get_png_list()
+    return templates.TemplateResponse("Jinja_front.html", {
+        "request": request,
+        "uploaded": True,
+        "ready": False,
+        "images": png_files
+    })
+
+@app.post("/run-process")
+async def process(request: Request):
+    filenames = os.listdir(UPLOAD_DIR)
+    required_exts = {"rd3", "rad", "rst"}
+    uploaded_exts = set([f.split('.')[-1].lower() for f in filenames])
+
+    if not required_exts.issubset(uploaded_exts):
+        return templates.TemplateResponse("Jinja_front.html", {
+            "request": request,
+            "ready": False,
+            "error": "rd3, rad, rst 파일이 모두 필요합니다.",
+            "images": []
+        })
+
+    global filename
+    for name in filenames:
+        if name.endswith(".rd3"):
+            filename = name[:-4]
+
     run()
     create_zip_from_results(output_zip_path=f"results/{filename}.zip")
+    result_images = get_png_list()
 
-    result_images = [f for f in os.listdir(RESULT_DIR) if f.endswith(".png")]
     return templates.TemplateResponse("Jinja_front.html", {
         "request": request,
         "ready": True,
-        "images": result_images,
+        "images": result_images
     })
+
 
 @app.get("/download")
 async def download_result():

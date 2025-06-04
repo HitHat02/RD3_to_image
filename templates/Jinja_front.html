@@ -70,31 +70,47 @@
 <body>
     <div class="container">
         <h2>RD3 파일 업로드 및 변환</h2>
-
+        <h4>.rd3 .rad .rst 파일을 업로드 해주세요</H4>
         <form action="/upload" method="post" enctype="multipart/form-data">
             <input type="file" name="files" multiple required><br>
             <input type="submit" value="업로드">
         </form>
 
-        {% if ready %}
-            <h3>이미지 생성 완료</h3>
-            <a href="/download" download>
-                <button class="download-button">ZIP으로 이미지 다운로드</button>
-            </a>
-
-            <!-- 초기화 버튼 -->
-            <form action="/clear" method="post" style="display:inline;">
-                <button type="submit" style="margin-left: 10px;">처음으로 돌아가기</button>
+        {% if uploaded and not ready %}
+            <form action="/run-process" method="post">
+                <button class="download-button" type="submit">이미지 생성하기</button>
             </form>
-
-            <div class="image-preview" style="margin-top: 30px;">
-                <h4>미리보기</h4>
-                {% for img in images %}
-                    <img src="/results/{{ img | urlencode }}" alt="{{ img }}" width="300">
-                {% endfor %}
-            </div> 
         {% endif %}
 
-    </div>
+
+        {% if ready %}
+        <h3>이미지 생성 완료</h3>
+        <a href="/download" download>
+            <button class="download-button">ZIP으로 이미지 다운로드</button>
+        </a>
+
+        <!-- 초기화 버튼 -->
+        <form action="/clear" method="post">
+            <button type="submit" class="download-button">처음으로 돌아가기</button>
+        </form>
+
+        <div class="image-preview" style="margin-top: 30px;">
+            <h4>미리보기</h4>
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                <!-- 왼쪽: 가로로 나란히 3장 -->
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    {% for img in images[:3] %}
+                        <img src="/results/{{ img | urlencode }}" alt="{{ img }}" width="300">
+                    {% endfor %}
+                </div>
+
+                <!-- 오른쪽: 종단면 1장 -->
+                {% if images|length > 3 %}
+                    <img src="/results/{{ images[3] | urlencode }}" alt="종단면" height="150">
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div> <!-- .container 닫기 -->
 </body>
 </html>
