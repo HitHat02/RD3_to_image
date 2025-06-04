@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import shutil, os
-
+from zipfile import ZipFile
 from image200 import run
 
 
@@ -62,27 +62,6 @@ async def upload(request: Request, files: List[UploadFile] = File(...)):
         "ready": False,
     })
 
-# @app.get("/uploaded", response_class=HTMLResponse)
-# def uploaded_view(request: Request):
-#      # 허용되지 않은 확장자 검사
-#     filenames = os.listdir(UPLOAD_DIR)
-#     required_exts = {"rd3", "rad", "rst"}
-#     uploaded_exts = set([f.split('.')[-1].lower() for f in filenames])
-#     disallowed_exts = uploaded_exts - required_exts
-#     if disallowed_exts:
-#         return templates.TemplateResponse("Jinja_front.html", {
-#             "request": request,
-#             "ready": False,
-#             "error": "rd3, rad, rst 파일만 사용할 수 있습니다.",
-#             "images": []
-#         })
-    
-
-#     return templates.TemplateResponse("Jinja_front.html", {
-#         "request": request,
-#         "uploaded": True,
-#         "ready": False,
-#     })
 
 @app.post("/run-process")
 async def process(request: Request):
@@ -90,17 +69,8 @@ async def process(request: Request):
     required_exts = {"rd3", "rad", "rst"}
     uploaded_exts = set([f.split('.')[-1].lower() for f in filenames])
 
-    #  # 허용되지 않은 확장자 검사
-    # disallowed_exts = uploaded_exts - required_exts
-    # if disallowed_exts:
-    #     return templates.TemplateResponse("Jinja_front.html", {
-    #         "request": request,
-    #         "ready": False,
-    #         "error": "rd3, rad, rst 파일만 사용할 수 있습니다.",
-    #         "images": []
-    #     })
 
-    # 정상 실행 조건
+    # 정상 실행 조건(rd3, rad, rst 파일이 모두 존재해야 함)
     if not required_exts.issubset(uploaded_exts):
         return templates.TemplateResponse("Jinja_front.html", {
             "request": request,
@@ -138,9 +108,23 @@ async def clear_and_redirect():
 
 def get_png_list():
     result_dir = "./results"
-    return [f for f in os.listdir(result_dir) if f.endswith(".png")]
+    files = [f for f in os.listdir(result_dir) if f.endswith(".png")]
 
-from zipfile import ZipFile
+    def sort_key(name):
+        if "도로면" in name:
+            return 0
+        elif "평단면" in name:
+            return 1
+        elif "종단면" in name:
+            return 2
+        else:
+            return 3  
+
+    sorted_files = sorted(files, key=sort_key)
+    print(" 이미지 정렬 결과:", sorted_files) 
+    return sorted_files
+    
+
 
 def create_zip_from_results(output_zip_path: str, result_dir: str = "./results"):
     with ZipFile(output_zip_path, "w") as zipf:

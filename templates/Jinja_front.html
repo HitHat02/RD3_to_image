@@ -102,22 +102,23 @@
         </form>
 
         <div class="image-preview" style="margin-top: 30px;">
-            <h4>미리보기</h4>
-            <div style="display: flex; gap: 10px; align-items: flex-start;">
-                <!-- 왼쪽: 가로로 나란히 3장 -->
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    {% for img in images[:3] %}
-                        <img src="/results/{{ img | urlencode }}" alt="{{ img }}" width="300">
-                    {% endfor %}
-                </div>
-
-                <!-- 오른쪽: 종단면 1장 -->
-                {% if images|length > 3 %}
-                    <img src="/results/{{ images[3] | urlencode }}" alt="종단면" height="150">
-                {% endif %}
+        <h4>미리보기</h4>
+        <div style="display: flex; gap: 10px; align-items: flex-start;">
+            <!-- 왼쪽: 도로면, 평단면, 종단면 -->
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                {% for img in images[:3] %}
+                    <img src="/results/{{ img | urlencode }}" alt="{{ img }}" width="300">
+                {% endfor %}
             </div>
+
+            <!-- 오른쪽: 횡단면 -->
+            {% for img in images[3:] %}
+                <img src="/results/{{ img | urlencode }}" alt="{{ img }}" height="150">
+            {% endfor %}
         </div>
+    </div>
+
     {% endif %}
-</div> <!-- .container 닫기 -->
+</div> 
 </body>
 </html>
