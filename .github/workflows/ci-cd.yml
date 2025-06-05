@@ -22,9 +22,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: ✅ 테스트 실행 (git_test)
+      - name: ✅ 테스트 실행 (pytest )
         run: |
-          git_test
+          pytest test_app.py
 
       - name: 🚀 서버에 배포 (pytest 성공 시만 실행)
         if: success()
