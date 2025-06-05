@@ -26,7 +26,7 @@ process_done = False
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
 
-    return templates.TemplateResponse("Jinja_front.html", {
+    return templates.TemplateResponse(request, "Jinja_front.html", {
         "request": request,
         "process_done": process_done
     })
@@ -50,7 +50,7 @@ async def upload(request: Request, files: List[UploadFile] = File(...)):
     uploaded_exts = set([f.split('.')[-1].lower() for f in filenames])
     disallowed_exts = uploaded_exts - required_exts
     if disallowed_exts:
-        return templates.TemplateResponse("Jinja_front.html", {
+        return templates.TemplateResponse(request, "Jinja_front.html", {
             "request": request,
             "ready": False,
             "error": "rd3, rad, rst 파일만 사용할 수 있습니다.",
@@ -60,7 +60,7 @@ async def upload(request: Request, files: List[UploadFile] = File(...)):
     global process_done
     process_done = False
 
-    return templates.TemplateResponse("Jinja_front.html", {
+    return templates.TemplateResponse(request, "Jinja_front.html", {
         "request": request,
         "upload": True,
         "ready": False,
@@ -83,7 +83,7 @@ async def process(request: Request):
 
     # 정상 실행 조건(rd3, rad, rst 파일이 모두 존재해야 함)
     if not required_exts.issubset(uploaded_exts):
-        return templates.TemplateResponse("Jinja_front.html", {
+        return templates.TemplateResponse(request, "Jinja_front.html", {
             "request": request,
             "ready": False,
             "error": "rd3, rad, rst 파일이 모두 필요합니다.",
@@ -99,12 +99,11 @@ async def process(request: Request):
     create_zip_from_results(output_zip_path=f"results/{filename}.zip")
     result_images = get_png_list()
 
-    return templates.TemplateResponse("Jinja_front.html", {
+    return templates.TemplateResponse(request, "Jinja_front.html", {
         "request": request,
         "ready": True,
         "images": result_images
     })
-
 
 @app.get("/download")
 async def download_result():

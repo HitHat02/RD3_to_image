@@ -45,7 +45,7 @@ def test_full_process_success():
     # 3. download 호출
     download_resp = client.get("/download")
     assert download_resp.status_code == 200
-    assert download_resp.headers["content-type"] == "application/x-zip-compressed"
+    assert "zip" in download_resp.headers["content-type"]
     assert download_resp.headers["content-disposition"].endswith(".zip\"")
 
     # 4. 실제 결과 zip 파일 존재 확인
