@@ -33,5 +33,6 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
+          port: 2222
           source: "."                  # 현재 리포지토리 전체
           target: "/home/RD3_to_image" # 서버의 목적지 폴더
