@@ -22,15 +22,18 @@ def test_upload_with_wrong_extension():
 
 
 def test_full_process_success():
-    # 올바른 확장자의 가짜 파일들
-    fake_files = [
-        ("files", ("test.rd3", b"rd3 content", "application/octet-stream")),
-        ("files", ("test.rad", b"rad content", "application/octet-stream")),
-        ("files", ("test.rst", b"rst content", "application/octet-stream")),
-    ]
+    # 실제 test_uploads 디렉토리에 있는 파일을 읽어서 업로드
+    upload_dir = "test_uploads"
+    filenames = ["test.rd3", "test.rad", "test.rst"]
 
-    # 1. 정상 업로드
-    upload_resp = client.post("/upload", files=fake_files)
+    files = []
+    for fname in filenames:
+        path = os.path.join(upload_dir, fname)
+        assert os.path.exists(path), f"파일 누락: {path}"
+        files.append(("files", (fname, open(path, "rb"), "application/octet-stream")))
+
+    # 1. 업로드
+    upload_resp = client.post("/upload", files=files)
     assert upload_resp.status_code == 200
     assert "error" not in upload_resp.text
 
@@ -39,13 +42,12 @@ def test_full_process_success():
     assert run_resp.status_code == 200
     assert "error" not in run_resp.text
 
-    # 3. download 응답 확인 (.zip)
+    # 3. download 호출
     download_resp = client.get("/download")
     assert download_resp.status_code == 200
     assert download_resp.headers["content-type"] == "application/x-zip-compressed"
     assert download_resp.headers["content-disposition"].endswith(".zip\"")
 
-
-    # 결과 zip 파일이 실제로 만들어졌는지 확인
+    # 4. 실제 결과 zip 파일 존재 확인
     zip_files = [f for f in os.listdir(RESULT_DIR) if f.endswith(".zip")]
     assert len(zip_files) > 0
